@@ -101,23 +101,23 @@ class SearchBoxRepository extends BaseRepository
         }
     }
 
-    public function renderTaxonomySelect($searchBox, array $torrentInfo = []): string
+    public function renderTaxonomySelect($searchBox, array $torrentInfo = [], bool $showAllTaxonomies = false): string
     {
         if (!$searchBox instanceof SearchBox) {
             $searchBox = SearchBox::get(intval($searchBox));
         }
         $results = [];
         //Keep the order
-        if (!empty($searchBox->extra[SearchBox::EXTRA_TAXONOMY_LABELS])) {
+        if (!$showAllTaxonomies && !empty($searchBox->extra[SearchBox::EXTRA_TAXONOMY_LABELS])) {
             foreach ($searchBox->extra[SearchBox::EXTRA_TAXONOMY_LABELS] as $taxonomy) {
-                $select = $this->buildTaxonomySelect($searchBox, $taxonomy['torrent_field'], $torrentInfo);
+                $select = $this->buildTaxonomySelect($searchBox, $taxonomy['torrent_field'], $torrentInfo, $showAllTaxonomies);
                 if ($select) {
                     $results[] = $select;
                 }
             }
         } else {
             foreach (SearchBox::$taxonomies as $torrentField => $taxonomyTableModel) {
-                $select = $this->buildTaxonomySelect($searchBox, $torrentField, $torrentInfo);
+                $select = $this->buildTaxonomySelect($searchBox, $torrentField, $torrentInfo, $showAllTaxonomies);
                 if ($select) {
                     $results[] = $select;
                 }
@@ -165,18 +165,21 @@ class SearchBoxRepository extends BaseRepository
         }
     }
 
-    private function buildTaxonomySelect(SearchBox $searchBox, $torrentField, array $torrentInfo)
+    private function buildTaxonomySelect(SearchBox $searchBox, $torrentField, array $torrentInfo, bool $showAllTaxonomies = false)
     {
         $searchBoxId = $searchBox->id;
         $searchBoxField = "show" . $torrentField;
-        if ($searchBox->showsubcat && $searchBox->{$searchBoxField}) {
+        if ($showAllTaxonomies || ($searchBox->showsubcat && $searchBox->{$searchBoxField})) {
             $table = SearchBox::$taxonomies[$torrentField]['table'];
-            $select = sprintf("<b>%s: </b>", $searchBox->getTaxonomyLabel($torrentField));
-            $select .= sprintf('<select name="%s_sel[%s]" data-mode="%s_%s">',$torrentField, $searchBoxId, $torrentField, $searchBoxId);
-            $select .= sprintf('<option value="%s">%s</option>', 0, nexus_trans('nexus.select_one_please'));
             $list = NexusDB::table($table)->where(function (Builder $query) use ($searchBox) {
                 return $query->where('mode', $searchBox->id)->orWhere('mode', 0);
             })->orderBy('sort_index', 'desc')->get();
+            if ($showAllTaxonomies && $list->isEmpty()) {
+                return;
+            }
+            $select = sprintf("<b>%s: </b>", $searchBox->getTaxonomyLabel($torrentField));
+            $select .= sprintf('<select name="%s_sel[%s]" data-mode="%s_%s">',$torrentField, $searchBoxId, $torrentField, $searchBoxId);
+            $select .= sprintf('<option value="%s">%s</option>', 0, nexus_trans('nexus.select_one_please'));
             foreach ($list as $item) {
                 $selected = '';
                 if (isset($torrentInfo[$torrentField]) && $torrentInfo[$torrentField] == $item->id) {

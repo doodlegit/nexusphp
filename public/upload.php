@@ -146,7 +146,10 @@ stdhead($lang_upload['head_upload']);
 					$s2 .= "</select>\n";
 				}
 				else $s2 = "";
-				tr($lang_upload['row_type']."<font color=\"red\">*</font>", ($allowtwosec ? $lang_upload['text_to_browse_section'] : "").$s.($allowtwosec ? $lang_upload['text_to_special_section'] : "").$s2.($allowtwosec ? $lang_upload['text_type_note'] : ""),1);
+				$typeLabel = (int) $browsecatmode === 0 || (int) $specialcatmode === 0
+                    ? \App\Models\Category::getLabelName()
+                    : $lang_upload['row_type'];
+				tr($typeLabel."<font color=\"red\">*</font>", ($allowtwosec ? $lang_upload['text_to_browse_section'] : "").$s.($allowtwosec ? $lang_upload['text_to_special_section'] : "").$s2.($allowtwosec ? $lang_upload['text_type_note'] : ""),1);
 /*
 				if ($showsource || $showmedium || $showcodec || $showaudiocodec || $showstandard || $showprocessing){
 					if ($showsource){
@@ -194,14 +197,14 @@ stdhead($lang_upload['head_upload']);
                 $customField = new \Nexus\Field\Field();
                 $hitAndRunRep = new \App\Repositories\HitAndRunRepository();
                 if ($allowtorrents) {
-                    $selectNormal = $searchBoxRep->renderTaxonomySelect($browsecatmode);
+                    $selectNormal = $searchBoxRep->renderTaxonomySelect($browsecatmode, [], (int) $browsecatmode === 0);
                     tr($lang_upload['row_quality'], $selectNormal, 1, "mode_$browsecatmode");
                     echo $customField->renderOnUploadPage(0, $browsecatmode);
                     echo $hitAndRunRep->renderOnUploadPage('', $browsecatmode);
                     tr($lang_functions['text_tags'], $tagRep->renderCheckbox($browsecatmode), 1, "mode_$browsecatmode");
                 }
                 if ($allowspecial) {
-                    $selectNormal = $searchBoxRep->renderTaxonomySelect($specialcatmode);
+                    $selectNormal = $searchBoxRep->renderTaxonomySelect($specialcatmode, [], (int) $specialcatmode === 0);
                     tr($lang_upload['row_quality'], $selectNormal, 1, "mode_$specialcatmode");
                     echo $customField->renderOnUploadPage(0, $specialcatmode);
                     echo $hitAndRunRep->renderOnUploadPage('', $specialcatmode);
