@@ -142,35 +142,46 @@ if (!$row) {
         }
 		if ($smalldescription_main == 'yes')
 			tr($lang_details['row_original_name'] ?? 'Original Name', htmlspecialchars(trim($row["small_descr"]), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), true);
-        if (!empty($row['quality'])) {
-			tr($lang_details['row_quality'] ?? 'Quality', htmlspecialchars($row['quality'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), true);
-        }
-        if ($imdb_id) {
-            $imdbIdDisplay = str_pad((string)$imdb_id, 7, '0', STR_PAD_LEFT);
-            $imdbUrl = 'https://www.imdb.com/title/tt' . rawurlencode($imdbIdDisplay) . '/';
-            $imdbLinkText = 'IMDb: tt' . htmlspecialchars($imdbIdDisplay, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            tr(
-                $lang_details['row_imdb_url'],
-                '<a href="' . htmlspecialchars($imdbUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">'
-                . $imdbLinkText . '</a>',
-                true
-            );
-        }
-        $myAnimeListLink = is_array($ptGenData)
-            ? ($ptGenData['myanimelist_link'] ?? $ptGenData['external_metadata_url'] ?? '')
-            : '';
-        $myAnimeListHost = is_string($myAnimeListLink) ? strtolower((string)parse_url($myAnimeListLink, PHP_URL_HOST)) : '';
-        if (is_string($myAnimeListLink) && filter_var($myAnimeListLink, FILTER_VALIDATE_URL)
-            && in_array($myAnimeListHost, ['myanimelist.net', 'www.myanimelist.net'], true)) {
-            preg_match('~^/anime/([0-9]+)(?:/|$)~', (string)parse_url($myAnimeListLink, PHP_URL_PATH), $myAnimeListIdMatch);
-            $myAnimeListLinkText = isset($myAnimeListIdMatch[1]) ? 'MAL: ' . $myAnimeListIdMatch[1] : 'MyAnimeList';
-            $escapedMyAnimeListLink = htmlspecialchars($myAnimeListLink, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            tr(
-                $lang_details['row_myanimelist_link'] ?? 'MyAnimeList link',
-                '<a href="' . $escapedMyAnimeListLink . '" target="_blank" rel="noopener noreferrer">'
-                . htmlspecialchars($myAnimeListLinkText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a>',
-                true
-            );
+        $renderQuality = static function () use ($row, $lang_details): void {
+            if (!empty($row['quality'])) {
+                tr($lang_details['row_quality'] ?? 'Quality', htmlspecialchars($row['quality'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), true);
+            }
+        };
+        $renderExternalLinks = static function () use ($imdb_id, $lang_details, $ptGenData): void {
+            if ($imdb_id) {
+                $imdbIdDisplay = str_pad((string)$imdb_id, 7, '0', STR_PAD_LEFT);
+                $imdbUrl = 'https://www.imdb.com/title/tt' . rawurlencode($imdbIdDisplay) . '/';
+                $imdbLinkText = 'IMDb: tt' . htmlspecialchars($imdbIdDisplay, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                tr(
+                    $lang_details['row_imdb_url'],
+                    '<a href="' . htmlspecialchars($imdbUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">'
+                    . $imdbLinkText . '</a>',
+                    true
+                );
+            }
+            $myAnimeListLink = is_array($ptGenData)
+                ? ($ptGenData['myanimelist_link'] ?? $ptGenData['external_metadata_url'] ?? '')
+                : '';
+            $myAnimeListHost = is_string($myAnimeListLink) ? strtolower((string)parse_url($myAnimeListLink, PHP_URL_HOST)) : '';
+            if (is_string($myAnimeListLink) && filter_var($myAnimeListLink, FILTER_VALIDATE_URL)
+                && in_array($myAnimeListHost, ['myanimelist.net', 'www.myanimelist.net'], true)) {
+                preg_match('~^/anime/([0-9]+)(?:/|$)~', (string)parse_url($myAnimeListLink, PHP_URL_PATH), $myAnimeListIdMatch);
+                $myAnimeListLinkText = isset($myAnimeListIdMatch[1]) ? 'MAL: ' . $myAnimeListIdMatch[1] : 'MyAnimeList';
+                $escapedMyAnimeListLink = htmlspecialchars($myAnimeListLink, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                tr(
+                    $lang_details['row_myanimelist_link'] ?? 'MyAnimeList link',
+                    '<a href="' . $escapedMyAnimeListLink . '" target="_blank" rel="noopener noreferrer">'
+                    . htmlspecialchars($myAnimeListLinkText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a>',
+                    true
+                );
+            }
+        };
+        if ((int) $row['search_box_id'] === 0) {
+            $renderExternalLinks();
+            $renderQuality();
+        } else {
+            $renderQuality();
+            $renderExternalLinks();
         }
 
 		//tag
