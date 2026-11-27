@@ -226,7 +226,7 @@ stdhead($lang_upload['head_upload']);
                 $hitAndRunRep = new \App\Repositories\HitAndRunRepository();
                 if ($allowtorrents) {
                     if ((int) $browsecatmode === 0) {
-                        $qualityInput = '<input type="text" name="quality[0]" list="none-quality-options-browse" maxlength="255" style="width: 99%;" /><datalist id="none-quality-options-browse">'.$noneQualityDatalist.'</datalist>';
+                        $qualityInput = '<input type="text" name="quality[0]" list="none-quality-options-browse" maxlength="255" style="width: 99%;" /><datalist id="none-quality-options-browse">'.$noneQualityDatalist.'</datalist><br><small class="text-muted">(e.g. Blu-Ray, DVD, UHD etc)</small>';
                         tr($lang_upload['row_quality'], $qualityInput, 1, "mode_$browsecatmode");
                     } else {
                         $selectNormal = $searchBoxRep->renderTaxonomySelect($browsecatmode);
@@ -235,7 +235,7 @@ stdhead($lang_upload['head_upload']);
                     echo $customField->renderOnUploadPage(0, $browsecatmode);
                     echo $hitAndRunRep->renderOnUploadPage('', $browsecatmode);
                     if ((int) $browsecatmode === 0) {
-                        $tagInput = '<input type="text" name="tag_name[0]" list="none-tag-options-browse" maxlength="255" style="width: 99%;" /><datalist id="none-tag-options-browse">'.$noneTagDatalist.'</datalist>';
+                        $tagInput = '<input type="text" name="tag_name[0]" list="none-tag-options-browse" maxlength="255" style="width: 99%;" /><datalist id="none-tag-options-browse">'.$noneTagDatalist.'</datalist><br><small class="text-muted">(e.g. Crime, Horror, Anime etc)</small>';
                         tr($lang_functions['text_tags'], $tagInput, 1, "mode_$browsecatmode");
                     } else {
                         tr($lang_functions['text_tags'], $tagRep->renderCheckbox($browsecatmode), 1, "mode_$browsecatmode");
@@ -243,7 +243,7 @@ stdhead($lang_upload['head_upload']);
                 }
                 if ($allowspecial) {
                     if ((int) $specialcatmode === 0) {
-                        $qualityInput = '<input type="text" name="quality[0]" list="none-quality-options-special" maxlength="255" style="width: 99%;" /><datalist id="none-quality-options-special">'.$noneQualityDatalist.'</datalist>';
+                        $qualityInput = '<input type="text" name="quality[0]" list="none-quality-options-special" maxlength="255" style="width: 99%;" /><datalist id="none-quality-options-special">'.$noneQualityDatalist.'</datalist><br><small class="text-muted">(e.g. Blu-Ray, DVD, UHD etc)</small>';
                         tr($lang_upload['row_quality'], $qualityInput, 1, "mode_$specialcatmode");
                     } else {
                         $selectNormal = $searchBoxRep->renderTaxonomySelect($specialcatmode);
@@ -252,7 +252,7 @@ stdhead($lang_upload['head_upload']);
                     echo $customField->renderOnUploadPage(0, $specialcatmode);
                     echo $hitAndRunRep->renderOnUploadPage('', $specialcatmode);
                     if ((int) $specialcatmode === 0) {
-                        $tagInput = '<input type="text" name="tag_name[0]" list="none-tag-options-special" maxlength="255" style="width: 99%;" /><datalist id="none-tag-options-special">'.$noneTagDatalist.'</datalist>';
+                        $tagInput = '<input type="text" name="tag_name[0]" list="none-tag-options-special" maxlength="255" style="width: 99%;" /><datalist id="none-tag-options-special">'.$noneTagDatalist.'</datalist><br><small class="text-muted">(e.g. Crime, Horror, Anime etc)</small>';
                         tr($lang_functions['text_tags'], $tagInput, 1, "mode_$specialcatmode");
                     } else {
                         tr($lang_functions['text_tags'], $tagRep->renderCheckbox($specialcatmode), 1, "mode_$specialcatmode");
