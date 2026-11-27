@@ -135,7 +135,7 @@ bark($lang_takeupload['std_blank_description']);
 $catid = intval($_POST["type"] ?? 0);
 $category = \App\Models\Category::query()
     ->whereKey($catid)
-    ->first(['id', 'mode']);
+    ->first(['id', 'mode', 'name']);
 if (!$category || !\App\Models\Category::isUploadable($catid, (int) $category->mode)) {
     bark('Invalid category');
 }
@@ -379,6 +379,18 @@ if (!is_dir($torrentSavePath)) {
 }
 if (!is_writable($torrentSavePath)) {
     bark("torrent save path: $torrentSavePath not writeable.");
+}
+
+if ($standaloneForumId === 0) {
+    \Nexus\Database\RuntimeMigrations::ensureStandaloneForumTables();
+    \Nexus\Database\RuntimeMigrations::ensureStandaloneForumTorrentsTable();
+    $matchingForumIds = \Illuminate\Support\Facades\DB::table('standalone_forums')
+        ->where('name', $category->name)
+        ->limit(2)
+        ->pluck('id');
+    if ($matchingForumIds->count() === 1) {
+        $standaloneForumId = (int) $matchingForumIds->first();
+    }
 }
 
 /**
