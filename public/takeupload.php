@@ -384,12 +384,12 @@ if (!is_writable($torrentSavePath)) {
 if ($standaloneForumId === 0) {
     \Nexus\Database\RuntimeMigrations::ensureStandaloneForumTables();
     \Nexus\Database\RuntimeMigrations::ensureStandaloneForumTorrentsTable();
-    $matchingForumIds = \Illuminate\Support\Facades\DB::table('standalone_forums')
-        ->where('name', $category->name)
-        ->limit(2)
-        ->pluck('id');
-    if ($matchingForumIds->count() === 1) {
-        $standaloneForumId = (int) $matchingForumIds->first();
+    $matchingForumsResult = sql_query(
+        "SELECT id FROM standalone_forums WHERE name = " . sqlesc($category->name) . " LIMIT 2"
+    ) or sqlerr(__FILE__, __LINE__);
+    $matchingForum = mysql_fetch_assoc($matchingForumsResult);
+    if ($matchingForum && !mysql_fetch_assoc($matchingForumsResult)) {
+        $standaloneForumId = (int) $matchingForum['id'];
     }
 }
 
