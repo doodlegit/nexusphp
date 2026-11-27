@@ -23,8 +23,8 @@ use App\Models\NexusModel;
 use App\Models\SearchBox;
 use App\Models\Torrent;
 use App\Repositories\SearchBoxRepository;
-use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables\Table;
 use Filament\Tables;
@@ -179,7 +179,10 @@ class CategoryResource extends Resource
                         $rep->deleteCategory($record->id);
                         clear_category_cache();
                     } catch (Exception $exception) {
-                        Filament::notify('danger', $exception->getMessage() ?: class_basename($exception));
+                        Notification::make()
+                            ->danger()
+                            ->title($exception->getMessage() ?: class_basename($exception))
+                            ->send();
                     }
                 }),
             ])
@@ -190,7 +193,10 @@ class CategoryResource extends Resource
                         $rep->deleteCategory($records->pluck('id')->toArray());
                         clear_category_cache();
                     } catch (Exception $exception) {
-                        Filament::notify('danger', $exception->getMessage() ?: class_basename($exception));
+                        Notification::make()
+                            ->danger()
+                            ->title($exception->getMessage() ?: class_basename($exception))
+                            ->send();
                     }
                 }),
             ]);
