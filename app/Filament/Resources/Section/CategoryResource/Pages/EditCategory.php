@@ -22,6 +22,15 @@ class EditCategory extends EditRecord
         ];
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if ((int) ($data['mode'] ?? -1) === 0 && empty($data['icon_id'])) {
+            $data['icon_id'] = 0;
+        }
+
+        return $data;
+    }
+
     /**
      * @see functions.php::get_category_row()
      */

@@ -136,7 +136,7 @@ class CategoryResource extends Resource
                 Select::make('icon_id')
                     ->options(Icon::query()->pluck('name', 'id')->toArray())
                     ->label(__('label.search_box.taxonomy.icon_id'))
-                    ->required()
+                    ->required(fn (Get $get): bool => (int) $get('mode') !== 0)
                 ,
                 TextInput::make('class_name')
                     ->label(__('label.search_box.taxonomy.class_name'))
