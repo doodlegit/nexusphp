@@ -245,8 +245,22 @@ JS;
 
                 //pick
                 $pickcontent = '';
+                if(user_can('torrentonpromotion'))
+                {
+                    $pickcontent .= "<b>".$lang_edit['row_special_torrent'].":&nbsp;</b><select name=\"sel_spstate\" style=\"width: 100px;\"><option value=\"0\" selected=\"selected\">".$lang_edit['select_use_global_setting']."</option>".promotion_selection(0, 0)."</select>&nbsp;&nbsp;&nbsp;";
+                    $pickcontent .= '<select name="promotion_time_type" onchange="if (this.value == \'2\') {document.getElementById(\'promotion_until_note\').style.display = \'\';} else {document.getElementById(\'promotion_until_note\').style.display = \'none\';}"><option value="0" selected="selected">'.$lang_edit['select_use_global_setting'].'</option><option value="1">'.$lang_edit['select_forever'].'</option><option value="2">'.$lang_edit['select_until'].'</option></select><span id="promotion_until_note" style="display: none;">';
+                    $pickcontent .= '<input type="text" id="promotionuntiltime" name="promotionuntil" style="width: 120px;" value="" />';
+                    $pickcontent .= '&nbsp;('.$lang_edit['text_ie_for'].'<select name="promotionaddedtime" onchange="document.getElementById(\'promotionuntiltime\').value=this.value;"><option value="">'.$lang_upload['select_choose_one'].'</option>';
+                    $promotionStartTime = time();
+                    foreach (array(900, 1800, 3600, 5400, 7200, 14400, 21600, 28800, 43200, 64800, 86400, 129600, 259200, 604800, 1296000, 2592000, 7776000, 15552000, 31104000) as $seconds) {
+                        $promotionUntil = date("Y-m-d H:i:s", $promotionStartTime + $seconds);
+                        $pickcontent .= '<option value="'.$promotionUntil.'">'.mkprettytime($seconds).'</option>';
+                    }
+                    $pickcontent .= '</select>)&nbsp;'.$lang_edit['text_promotion_until_note'].'</span>&nbsp;&nbsp;';
+                }
                 if(user_can('torrentsticky'))
                 {
+                    if ($pickcontent) $pickcontent .= '<br />';
                     $options = [];
                     foreach (\App\Models\Torrent::listPosStates() as $key => $value) {
                         $options[] = "<option" . (($row["pos_state"] == $key) ? " selected=\"selected\"" : "" ) . " value=\"" . $key . "\">".$value['text']."</option>";

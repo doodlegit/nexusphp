@@ -329,6 +329,25 @@ else{ //ramdom torrent promotion
 //}
 //}
 $dateTimeStringNow = \Carbon\Carbon::now()->toDateTimeString();
+$promotionTimeType = 0;
+$promotionUntil = null;
+if (user_can('torrentonpromotion')) {
+    $requestedPromotionState = filter_var($_POST['sel_spstate'] ?? null, FILTER_VALIDATE_INT);
+    if ($requestedPromotionState !== false && isset(\App\Models\Torrent::$promotionTypes[$requestedPromotionState])) {
+        $sp_state = $requestedPromotionState;
+        $requestedPromotionTimeType = intval($_POST['promotion_time_type'] ?? 0);
+        if ($requestedPromotionTimeType === 1) {
+            $promotionTimeType = 1;
+        } elseif ($requestedPromotionTimeType === 2) {
+            $requestedPromotionUntil = trim((string) ($_POST['promotionuntil'] ?? ''));
+            $promotionUntilTimestamp = $requestedPromotionUntil === '' ? false : strtotime($requestedPromotionUntil);
+            if ($promotionUntilTimestamp !== false && $promotionUntilTimestamp >= strtotime($dateTimeStringNow)) {
+                $promotionTimeType = 2;
+                $promotionUntil = $requestedPromotionUntil;
+            }
+        }
+    }
+}
 
 $torrentSavePath = getFullDirectory($torrent_dir);
 if (!is_dir($torrentSavePath)) {
@@ -374,6 +393,8 @@ $insert = [
     'team' => $teamid,
     'save_as' => $dname,
     'sp_state' => $sp_state,
+    'promotion_time_type' => $promotionTimeType,
+    'promotion_until' => $promotionUntil,
     'added' => $dateTimeStringNow,
     'last_action' => $dateTimeStringNow,
 //    'nfo' => $nfo,
