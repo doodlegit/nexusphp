@@ -3822,7 +3822,7 @@ foreach ($rows as $row)
     }
 	print("</td>");
 
-    if ($enableImdb || $enablePtGen) {
+    if ($searchBoxId !== 0 && ($enableImdb || $enablePtGen)) {
         echo $torrent->renderTorrentsPageAverageRating($row, $ptGenInfo[$row['id']] ?? []);
     }
 		$act = "";
