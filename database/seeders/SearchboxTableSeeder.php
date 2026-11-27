@@ -43,6 +43,23 @@ class SearchboxTableSeeder extends Seeder
             ),
         ));
 
+        \DB::table('searchbox')->insert([
+            'name' => 'None',
+            'showsubcat' => 1,
+            'showsource' => 1,
+            'showmedium' => 1,
+            'showcodec' => 1,
+            'showstandard' => 1,
+            'showprocessing' => 1,
+            'showteam' => 1,
+            'showaudiocodec' => 1,
+            'catsperrow' => 8,
+            'catpadding' => 3,
+            'custom_fields' => '',
+            'custom_fields_display_name' => '',
+            'custom_fields_display' => '',
+        ]);
+        \DB::table('searchbox')->where('name', 'None')->update(['id' => 0]);
 
     }
 }

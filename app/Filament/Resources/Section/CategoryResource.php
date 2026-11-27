@@ -87,8 +87,12 @@ class CategoryResource extends Resource
                 ,
                 Select::make('parent_id')
                     ->options(function (Get $get, ?Category $record): array {
-                        $mode = (int) $get('mode');
-                        if ($mode <= 0) {
+                        $selectedMode = $get('mode');
+                        if ($selectedMode === null || $selectedMode === '') {
+                            return [];
+                        }
+                        $mode = (int) $selectedMode;
+                        if ($mode < 0) {
                             return [];
                         }
 
@@ -127,7 +131,7 @@ class CategoryResource extends Resource
                 TextInput::make('image')
                     ->label(__('label.search_box.taxonomy.image'))
                     ->helperText(__('label.search_box.taxonomy.image_help'))
-                    ->required()
+                    ->required(fn (Get $get): bool => (int) $get('mode') !== 0)
                 ,
                 Select::make('icon_id')
                     ->options(Icon::query()->pluck('name', 'id')->toArray())

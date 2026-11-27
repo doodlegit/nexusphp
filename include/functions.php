@@ -5388,6 +5388,9 @@ function return_category_image($categoryid, $link="")
 		$catimg = $catImg[$categoryid];
 	} else {
 		$categoryrow = get_category_row($categoryid);
+		if ((int) $categoryrow['mode'] === 0 && empty($categoryrow['image'])) {
+			return '';
+		}
 		$catimgurl = get_cat_folder($categoryid);
 		$catImg[$categoryid] = $catimg = "<img".($categoryrow['class_name'] ? " class=\"".$categoryrow['class_name']."\"" : "")." src=\"pic/cattrans.gif\" alt=\"" . $categoryrow["name"] . "\" title=\"" .$categoryrow["name"]. "\" style=\"background-image: url(pic/" . $catimgurl . '/' . $categoryrow["image"].");\" />";
 	}
