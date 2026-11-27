@@ -9,8 +9,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('searchbox') || !Schema::hasTable('categories') || !Schema::hasTable('settings')) {
-            throw new RuntimeException('Search box, category, and settings tables are required to move categories to None.');
+        if (!Schema::hasTable('searchbox') || !Schema::hasTable('categories')) {
+            throw new RuntimeException('Search box and category tables are required to move categories to None.');
         }
 
         $noneSearchBox = DB::table('searchbox')->where('id', 0)->first();
@@ -21,12 +21,6 @@ return new class extends Migration
         $chdSearchBox = DB::table('searchbox')->where('name', 'chd')->first();
         if (!$chdSearchBox) {
             throw new RuntimeException('The chd search box was not found; unable to move its categories.');
-        }
-
-        $specialMode = DB::table('settings')->where('name', 'main.specialcat')->value('value');
-        $specialEnabled = DB::table('settings')->where('name', 'main.spsct')->value('value') === 'yes';
-        if ($specialEnabled && (int) $specialMode === (int) $chdSearchBox->id) {
-            throw new RuntimeException('The chd search box is also used by the Special section; change its mode before moving categories.');
         }
 
         DB::table('categories')
