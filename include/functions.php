@@ -6308,7 +6308,7 @@ function build_search_box_category_table($mode, $checkboxValue, $categoryHrefPre
     $searchBox = \App\Models\SearchBox::query()->with(['categories', 'categories.icon'])->findOrFail($mode);
     $lang = get_langfolder_cookie();
     $withTaxonomies = [];
-    if ($searchBox->showsubcat) {
+    if ((int) $mode !== 0 && $searchBox->showsubcat) {
         //Keep the order
         if (!empty($searchBox->extra[SearchBox::EXTRA_TAXONOMY_LABELS])) {
             foreach ($searchBox->extra[SearchBox::EXTRA_TAXONOMY_LABELS] as $taxonomyLabelInfo) {
