@@ -61,7 +61,8 @@ class TagRepository extends BaseRepository
         foreach ($results as $value) {
             $html .= sprintf(
                 '<label><input type="checkbox" name="tags[%s][]" value="%s"%s />%s</label>',
-                $searchBoxId, $value->id, in_array($value->id, $checked) ? ' checked' : '', $value->name
+                $searchBoxId, $value->id, in_array($value->id, $checked) ? ' checked' : '',
+                htmlspecialchars($value->name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
             );
         }
         return $html;
@@ -76,7 +77,8 @@ class TagRepository extends BaseRepository
                 if ($value) {
                     $item = sprintf(
                         "<span style=\"background-color:%s;color:%s;border-radius:%s;font-size:%s;margin:%s;padding:%s\" title=\"%s\">%s</span>",
-                        $value->color, $value->font_color, $value->border_radius, $value->font_size, $value->margin, $value->padding, $value->description, $value->name
+                        $value->color, $value->font_color, $value->border_radius, $value->font_size, $value->margin, $value->padding, $value->description,
+                        htmlspecialchars($value->name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
                     );
                     if ($withFilterLink) {
                         $html .= sprintf('<a href="?tag_id=%s">%s</a>', $tagId, $item);
@@ -155,7 +157,7 @@ class TagRepository extends BaseRepository
             self::$allTags = self::createBasicQuery()->get();
         }
         if ($searchBoxId > 0) {
-            return self::$allTags->filter(fn ($d) => in_array($d->mode, [0, $searchBoxId]));
+            return self::$allTags->filter(fn ($d) => !$d->none_only && in_array($d->mode, [0, $searchBoxId]));
         }
         return self::$allTags;
     }

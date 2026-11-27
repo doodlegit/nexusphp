@@ -13,7 +13,11 @@ class Tag extends NexusModel
     protected $fillable = [
         'id', 'name', 'color', 'priority', 'created_at', 'updated_at',
         'font_size', 'font_color', 'padding', 'margin', 'border_radius',
-        'mode', 'description'
+        'mode', 'description', 'none_only'
+    ];
+
+    protected $casts = [
+        'none_only' => 'boolean',
     ];
 
     const DEFAULTS = [

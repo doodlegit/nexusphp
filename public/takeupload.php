@@ -147,6 +147,25 @@ $standardid = intval($_POST["standard_sel"][$catmod] ?? 0);
 $processingid = intval($_POST["processing_sel"][$catmod] ?? 0);
 $teamid = intval($_POST["team_sel"][$catmod] ?? 0);
 $audiocodecid = intval($_POST["audiocodec_sel"][$catmod] ?? 0);
+$noneQuality = '';
+$noneTagName = '';
+if ($catmod === 0) {
+    $qualityInputs = $_POST['quality'] ?? [];
+    $tagInputs = $_POST['tag_name'] ?? [];
+    if (!is_array($qualityInputs) || !is_array($tagInputs)) {
+        bark('Invalid Quality or Tags value.');
+    }
+    $noneQualityInput = $qualityInputs[0] ?? '';
+    $noneTagInput = $tagInputs[0] ?? '';
+    if (!is_string($noneQualityInput) || !is_string($noneTagInput)) {
+        bark('Invalid Quality or Tags value.');
+    }
+    $noneQuality = trim($noneQualityInput);
+    $noneTagName = trim($noneTagInput);
+    if (mb_strlen($noneQuality) > 255 || mb_strlen($noneTagName) > 255) {
+        bark('Quality and Tags values must not exceed 255 characters.');
+    }
+}
 
 if (!is_valid_id($catid))
 bark($lang_takeupload['std_category_unselected']);
@@ -414,6 +433,7 @@ $extra = [
     'media_info' => $_POST['technical_info'] ?? '',
     'nfo' => $nfo,
     'pt_gen' => $ptGen,
+    'quality' => $noneQuality !== '' ? $noneQuality : null,
 ];
 if (isset($_POST['hr'][$catmod]) && isset(\App\Models\Torrent::$hrStatus[$_POST['hr'][$catmod]]) && user_can('torrent_hr')) {
     $insert['hr'] = $_POST['hr'][$catmod];
@@ -492,7 +512,14 @@ if (!empty($_POST['custom_fields'][$catmod])) {
  *
  * @since v1.6
  */
-$tagIdArr = array_filter($_POST['tags'][$catmod] ?? []);
+$tagIdArr = $catmod === 0 ? [] : array_filter($_POST['tags'][$catmod] ?? []);
+if ($catmod === 0 && $noneTagName !== '') {
+    $tag = \App\Models\Tag::query()->firstOrCreate(
+        ['name' => $noneTagName],
+        ['color' => '#777777', 'priority' => 0, 'mode' => 0, 'none_only' => true]
+    );
+    $tagIdArr[] = $tag->id;
+}
 if (!empty($tagIdArr)) {
     insert_torrent_tags($id, $tagIdArr);
 }

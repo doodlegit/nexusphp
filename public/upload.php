@@ -58,6 +58,34 @@ $settingMain = get_setting('main');
 $torrentRep = new \App\Repositories\TorrentRepository();
 $searchBoxRep = new \App\Repositories\SearchBoxRepository();
 $tagRep = new \App\Repositories\TagRepository();
+$noneModeAvailable = ($allowtorrents && (int) $browsecatmode === 0)
+    || ($allowspecial && (int) $specialcatmode === 0);
+$noneQualityOptions = collect();
+$noneTagOptions = collect();
+if ($noneModeAvailable) {
+    $noneQualityOptions = \App\Models\TorrentExtra::query()
+        ->whereNotNull('quality')
+        ->where('quality', '!=', '')
+        ->whereHas('torrent.basic_category', fn ($query) => $query->where('mode', 0))
+        ->distinct()
+        ->orderBy('quality')
+        ->pluck('quality');
+    $noneTagQuery = \App\Models\Tag::query()
+        ->where('mode', 0)
+        ->orderBy('name');
+    if (!user_can('torrent-set-special-tag')) {
+        $noneTagQuery->whereNotIn('id', \App\Models\Tag::listSpecial());
+    }
+    $noneTagOptions = $noneTagQuery->pluck('name');
+}
+$noneQualityDatalist = '';
+foreach ($noneQualityOptions as $qualityOption) {
+    $noneQualityDatalist .= '<option value="' . htmlspecialchars($qualityOption, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"></option>';
+}
+$noneTagDatalist = '';
+foreach ($noneTagOptions as $tagOption) {
+    $noneTagDatalist .= '<option value="' . htmlspecialchars($tagOption, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"></option>';
+}
 stdhead($lang_upload['head_upload']);
 ?>
 	<form id="compose" enctype="multipart/form-data" action="takeupload.php" method="post" name="upload">
@@ -197,18 +225,38 @@ stdhead($lang_upload['head_upload']);
                 $customField = new \Nexus\Field\Field();
                 $hitAndRunRep = new \App\Repositories\HitAndRunRepository();
                 if ($allowtorrents) {
-                    $selectNormal = $searchBoxRep->renderTaxonomySelect($browsecatmode, [], (int) $browsecatmode === 0);
-                    tr($lang_upload['row_quality'], $selectNormal, 1, "mode_$browsecatmode");
+                    if ((int) $browsecatmode === 0) {
+                        $qualityInput = '<input type="text" name="quality[0]" list="none-quality-options-browse" maxlength="255" style="width: 99%;" /><datalist id="none-quality-options-browse">'.$noneQualityDatalist.'</datalist>';
+                        tr($lang_upload['row_quality'], $qualityInput, 1, "mode_$browsecatmode");
+                    } else {
+                        $selectNormal = $searchBoxRep->renderTaxonomySelect($browsecatmode);
+                        tr($lang_upload['row_quality'], $selectNormal, 1, "mode_$browsecatmode");
+                    }
                     echo $customField->renderOnUploadPage(0, $browsecatmode);
                     echo $hitAndRunRep->renderOnUploadPage('', $browsecatmode);
-                    tr($lang_functions['text_tags'], $tagRep->renderCheckbox($browsecatmode), 1, "mode_$browsecatmode");
+                    if ((int) $browsecatmode === 0) {
+                        $tagInput = '<input type="text" name="tag_name[0]" list="none-tag-options-browse" maxlength="255" style="width: 99%;" /><datalist id="none-tag-options-browse">'.$noneTagDatalist.'</datalist>';
+                        tr($lang_functions['text_tags'], $tagInput, 1, "mode_$browsecatmode");
+                    } else {
+                        tr($lang_functions['text_tags'], $tagRep->renderCheckbox($browsecatmode), 1, "mode_$browsecatmode");
+                    }
                 }
                 if ($allowspecial) {
-                    $selectNormal = $searchBoxRep->renderTaxonomySelect($specialcatmode, [], (int) $specialcatmode === 0);
-                    tr($lang_upload['row_quality'], $selectNormal, 1, "mode_$specialcatmode");
+                    if ((int) $specialcatmode === 0) {
+                        $qualityInput = '<input type="text" name="quality[0]" list="none-quality-options-special" maxlength="255" style="width: 99%;" /><datalist id="none-quality-options-special">'.$noneQualityDatalist.'</datalist>';
+                        tr($lang_upload['row_quality'], $qualityInput, 1, "mode_$specialcatmode");
+                    } else {
+                        $selectNormal = $searchBoxRep->renderTaxonomySelect($specialcatmode);
+                        tr($lang_upload['row_quality'], $selectNormal, 1, "mode_$specialcatmode");
+                    }
                     echo $customField->renderOnUploadPage(0, $specialcatmode);
                     echo $hitAndRunRep->renderOnUploadPage('', $specialcatmode);
-                    tr($lang_functions['text_tags'], $tagRep->renderCheckbox($specialcatmode), 1, "mode_$specialcatmode");
+                    if ((int) $specialcatmode === 0) {
+                        $tagInput = '<input type="text" name="tag_name[0]" list="none-tag-options-special" maxlength="255" style="width: 99%;" /><datalist id="none-tag-options-special">'.$noneTagDatalist.'</datalist>';
+                        tr($lang_functions['text_tags'], $tagInput, 1, "mode_$specialcatmode");
+                    } else {
+                        tr($lang_functions['text_tags'], $tagRep->renderCheckbox($specialcatmode), 1, "mode_$specialcatmode");
+                    }
                 }
 
 				//==== offer dropdown for offer mod  from code by S4NE
