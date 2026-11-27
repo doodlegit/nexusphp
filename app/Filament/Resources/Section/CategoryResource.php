@@ -127,14 +127,12 @@ class CategoryResource extends Resource
                 TextInput::make('image')
                     ->label(__('label.search_box.taxonomy.image'))
                     ->helperText(__('label.search_box.taxonomy.image_help'))
-                    ->required(fn (Get $get): bool => SearchBox::query()
-                        ->whereKey($get('mode'))
-                        ->value('name') !== 'None')
+                    ->required()
                 ,
                 Select::make('icon_id')
-                    ->options([0 => 'None'] + Icon::query()->pluck('name', 'id')->toArray())
+                    ->options(Icon::query()->pluck('name', 'id')->toArray())
                     ->label(__('label.search_box.taxonomy.icon_id'))
-                    ->default(0)
+                    ->required()
                 ,
                 TextInput::make('class_name')
                     ->label(__('label.search_box.taxonomy.class_name'))
