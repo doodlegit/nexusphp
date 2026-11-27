@@ -41,6 +41,24 @@ class SearchboxTableSeeder extends Seeder
                     SearchBox::EXTRA_DISPLAY_COVER_ON_TORRENT_LIST => 1,
                 ])
             ),
+            1 =>
+            array (
+                'id' => 5,
+                'name' => 'None',
+                'showsubcat' => 0,
+                'showsource' => 0,
+                'showmedium' => 0,
+                'showcodec' => 0,
+                'showstandard' => 0,
+                'showprocessing' => 0,
+                'showteam' => 0,
+                'showaudiocodec' => 0,
+                'catsperrow' => 8,
+                'catpadding' => 3,
+                'custom_fields' => '',
+                'custom_fields_display_name' => '',
+                'custom_fields_display' => '',
+            ),
         ));
 
 

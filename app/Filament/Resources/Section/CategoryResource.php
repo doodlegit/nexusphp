@@ -57,7 +57,7 @@ class CategoryResource extends Resource
         return $schema
             ->components([
                 Select::make('mode')
-                    ->options(array_replace([0 => 'None'], SearchBox::listModeOptions()))
+                    ->options(SearchBox::listModeOptions())
                     ->label(__('label.search_box.label'))
                     ->reactive()
                     ->rules([
@@ -88,9 +88,6 @@ class CategoryResource extends Resource
                 Select::make('parent_id')
                     ->options(function (Get $get, ?Category $record): array {
                         $mode = (int) $get('mode');
-                        if ($mode === 0) {
-                            $mode = (int) SearchBox::getBrowseMode();
-                        }
                         if ($mode <= 0) {
                             return [];
                         }
@@ -113,15 +110,11 @@ class CategoryResource extends Resource
                                 if ($value === null || $value === '') {
                                     return;
                                 }
-                                $mode = (int) $get('mode');
-                                if ($mode === 0) {
-                                    $mode = (int) SearchBox::getBrowseMode();
-                                }
                                 $parent = Category::query()->find($value);
                                 if (
                                     !$parent
                                     || $parent->parent_id !== null
-                                    || (int) $parent->mode !== $mode
+                                    || (int) $parent->mode !== (int) $get('mode')
                                     || ($record && $record->children()->exists())
                                 ) {
                                     $fail('Choose a top-level category from the same section.');
@@ -134,7 +127,9 @@ class CategoryResource extends Resource
                 TextInput::make('image')
                     ->label(__('label.search_box.taxonomy.image'))
                     ->helperText(__('label.search_box.taxonomy.image_help'))
-                    ->required(fn (Get $get): bool => (int) $get('mode') !== 0)
+                    ->required(fn (Get $get): bool => SearchBox::query()
+                        ->whereKey($get('mode'))
+                        ->value('name') !== 'None')
                 ,
                 Select::make('icon_id')
                     ->options([0 => 'None'] + Icon::query()->pluck('name', 'id')->toArray())
