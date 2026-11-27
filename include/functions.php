@@ -2471,13 +2471,17 @@ function get_style_addicode()
 	return $cssRow['addicode'];
 }
 
-function get_cat_folder($cat = 101)
+function get_cat_folder($cat = 101, ?int $modeOverride = null)
 {
 	static $catPath = array();
-	if (!isset($catPath[$cat])) {
+	$cacheKey = $cat . ':' . ($modeOverride ?? '');
+	if (!isset($catPath[$cacheKey])) {
 		global $CURUSER, $CURLANGDIR;
         $catrow = get_category_row($cat);
 		$catmode = $catrow['catmodename'];
+		if ($modeOverride !== null && $modeOverride > 0 && (int) $catrow['mode'] === 0) {
+			$catmode = get_searchbox_value($modeOverride, 'name') ?: $catmode;
+		}
 //		$caticonrow = get_category_icon_row($CURUSER['caticon']);
         /**
          * @since v1.6
@@ -2489,9 +2493,9 @@ function get_cat_folder($cat = 101)
 		    $path .= '/' . trim($CURLANGDIR, '/');
         }
 		do_log("cat: $cat, path: $path", 'debug');
-        $catPath[$cat] = $path;
+        $catPath[$cacheKey] = $path;
 	}
-	return $catPath[$cat] ?? '';
+	return $catPath[$cacheKey] ?? '';
 }
 
 function get_style_highlight()
@@ -3680,8 +3684,10 @@ foreach ($rows as $row)
 
 	print("<td class=\"rowfollow nowrap\" valign=\"middle\" style='padding: 0px'>");
 	if (isset($row["category"])) {
-		print(return_category_image($row["category"], "?"));
-		if ($has_secondicon){
+		if ($searchBoxId !== 0) {
+			print(return_category_image($row["category"], "?", $searchBoxId));
+		}
+		if ($searchBoxId !== 0 && $has_secondicon){
 			print(get_second_icon($row));
 		}
 	}
@@ -5381,18 +5387,22 @@ function return_avatar_image($url)
 	global $CURLANGDIR;
 	return "<img src=\"".$url."\" alt=\"avatar\" width=\"150px\" onload=\"check_avatar(this, '".$CURLANGDIR."');\" />";
 }
-function return_category_image($categoryid, $link="")
+function return_category_image($categoryid, $link="", ?int $modeOverride = null)
 {
 	static $catImg = array();
-	if (isset($catImg[$categoryid])) {
-		$catimg = $catImg[$categoryid];
+	$cacheKey = $categoryid . ':' . ($modeOverride ?? '');
+	$categoryrow = get_category_row($categoryid);
+	if ((int) $categoryrow['mode'] === 0 && $modeOverride === 0) {
+		return '';
+	}
+	if (isset($catImg[$cacheKey])) {
+		$catimg = $catImg[$cacheKey];
 	} else {
-		$categoryrow = get_category_row($categoryid);
 		if ((int) $categoryrow['mode'] === 0 && empty($categoryrow['image'])) {
 			return '';
 		}
-		$catimgurl = get_cat_folder($categoryid);
-		$catImg[$categoryid] = $catimg = "<img".($categoryrow['class_name'] ? " class=\"".$categoryrow['class_name']."\"" : "")." src=\"pic/cattrans.gif\" alt=\"" . $categoryrow["name"] . "\" title=\"" .$categoryrow["name"]. "\" style=\"background-image: url(pic/" . $catimgurl . '/' . $categoryrow["image"].");\" />";
+		$catimgurl = get_cat_folder($categoryid, $modeOverride);
+		$catImg[$cacheKey] = $catimg = "<img".($categoryrow['class_name'] ? " class=\"".$categoryrow['class_name']."\"" : "")." src=\"pic/cattrans.gif\" alt=\"" . $categoryrow["name"] . "\" title=\"" .$categoryrow["name"]. "\" style=\"background-image: url(pic/" . $catimgurl . '/' . $categoryrow["image"].");\" />";
 	}
 	if ($link) {
 		$catimg = "<a href=\"".$link."cat=" . $categoryid . "\">".$catimg."</a>";
@@ -6360,7 +6370,7 @@ function build_search_box_category_table($mode, $checkboxValue, $categoryHrefPre
                     }
                 }
                 $icon = $item->icon;
-                if ((int) $item->mode === 0 && (empty($item->image) || !$icon)) {
+                if ((int) $mode === 0 || empty($item->image) || !$icon) {
                     $categoryName = htmlspecialchars((string) $item->name, ENT_QUOTES, 'UTF-8');
                     $tdContent = sprintf(
                         '<input type="checkbox" id="cat%d" name="cat%d" value="%s"%s /> <a href="%scat=%d">%s</a>',
