@@ -109,6 +109,7 @@ if (isset($_GET['sort']) && $_GET['sort'] && isset($_GET['type']) && $_GET['type
 }
 
 $allCategoryId = \App\Models\SearchBox::listCategoryId($sectiontype);
+$isNoneBrowse = nexus()->getScript() === 'torrents' && (int) $sectiontype === 0;
 $addparam = "";
 $wherea = array();
 $wherecatina = array();
@@ -329,6 +330,15 @@ elseif ($special_state == 7)	//30% down
 }
 
 $category_get = intval($_GET["cat"] ?? 0);
+$hasExplicitCategoryFilter = $category_get > 0 || !empty($_GET['all']);
+if (!$hasExplicitCategoryFilter) {
+    foreach (array_keys($_GET) as $parameter) {
+        if (preg_match('/^cat\d+$/', (string) $parameter)) {
+            $hasExplicitCategoryFilter = true;
+            break;
+        }
+    }
+}
 $source_get = $medium_get = $codec_get = $standard_get = $processing_get = $team_get = $audiocodec_get = 0;
 if ($showsubcat){
 if ($showsource) $source_get = intval($_GET["source"] ?? 0);
@@ -653,7 +663,11 @@ if ($all)
 }
 //stderr("", count($wherecatina)."-". count($wheresourceina));
 $wherecatin = $wheresourcein = $wheremediumin = $wherecodecin = $wherestandardin = $whereprocessingin = $whereteamin = $whereaudiocodecin = '';
-if (empty($wherecatina) && !(in_array($inclbookmarked, [1, 2]) && $allsec == 1)) {
+if (
+    empty($wherecatina)
+    && (!$isNoneBrowse || $hasExplicitCategoryFilter)
+    && !(in_array($inclbookmarked, [1, 2]) && $allsec == 1)
+) {
     //require limit in some category
     $wherecatina = $allCategoryId;
 }
