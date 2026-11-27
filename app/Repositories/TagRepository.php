@@ -151,13 +151,18 @@ class TagRepository extends BaseRepository
         return self::$orderByFieldIdString;
     }
 
-    public static function listAll(int $searchBoxId = 0): \Illuminate\Database\Eloquent\Collection|array
+    public static function listAll(?int $searchBoxId = null): \Illuminate\Database\Eloquent\Collection|array
     {
         if (empty(self::$allTags)) {
             self::$allTags = self::createBasicQuery()->get();
         }
-        if ($searchBoxId > 0) {
-            return self::$allTags->filter(fn ($d) => !$d->none_only && in_array($d->mode, [0, $searchBoxId]));
+        if ($searchBoxId !== null) {
+            return self::$allTags->filter(function ($tag) use ($searchBoxId) {
+                if ($searchBoxId === 0) {
+                    return (int) $tag->mode === 0;
+                }
+                return !$tag->none_only && in_array((int) $tag->mode, [0, $searchBoxId], true);
+            });
         }
         return self::$allTags;
     }
