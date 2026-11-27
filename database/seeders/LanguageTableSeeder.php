@@ -361,7 +361,34 @@ class LanguageTableSeeder extends Seeder
                 'trans_state' => 'unavailable',
             ),
         ));
-        
+
+        $historicalOrNonFifaIds = [38, 58, 63, 71, 92, 105, 107];
+        $existingNames = \DB::table('language')->pluck('lang_name')->all();
+        $nextId = ((int) \DB::table('language')->max('id')) + 1;
+        $countries = \DB::table('countries')
+            ->whereBetween('id', [1, 226])
+            ->whereNotIn('id', $historicalOrNonFifaIds)
+            ->orderBy('name')
+            ->get();
+
+        foreach ($countries as $country) {
+            $name = trim($country->name);
+            if ($name === '' || in_array($name, $existingNames, true)) {
+                continue;
+            }
+
+            \DB::table('language')->insert([
+                'id' => $nextId++,
+                'lang_name' => $name,
+                'flagpic' => $country->flagpic,
+                'sub_lang' => 1,
+                'rule_lang' => 0,
+                'site_lang' => 0,
+                'site_lang_folder' => '',
+                'trans_state' => 'unavailable',
+            ]);
+            $existingNames[] = $name;
+        }
         
     }
 }
