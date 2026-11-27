@@ -2478,14 +2478,15 @@ function get_cat_folder($cat = 101)
 		global $CURUSER, $CURLANGDIR;
         $catrow = get_category_row($cat);
 		$catmode = $catrow['catmodename'];
-//		$caticonrow = get_category_icon_row($CURUSER['caticon']);
-        /**
-         * @since v1.6
-         * use setting, not user's caticon, that field make no sense!
-         */
-		$caticonrow = get_category_icon_row($catrow['icon_id'] ?: 1);
-		$path = sprintf('category/%s/%s', trim($catmode, '/'), trim($caticonrow['folder'], '/'));
-		if ($caticonrow['multilang'] == 'yes') {
+		$path = sprintf('category/%s', trim($catmode, '/'));
+		if (!empty($catrow['icon_id'])) {
+			$caticonrow = get_category_icon_row($catrow['icon_id']);
+			$folder = trim($caticonrow['folder'] ?? '', '/');
+			if ($folder !== '') {
+				$path .= '/' . $folder;
+			}
+		}
+		if (!empty($caticonrow) && $caticonrow['multilang'] == 'yes') {
 		    $path .= '/' . trim($CURLANGDIR, '/');
         }
 		do_log("cat: $cat, path: $path", 'debug');
@@ -5388,6 +5389,9 @@ function return_category_image($categoryid, $link="")
 		$catimg = $catImg[$categoryid];
 	} else {
 		$categoryrow = get_category_row($categoryid);
+		if (empty($categoryrow['image'])) {
+			return '';
+		}
 		$catimgurl = get_cat_folder($categoryid);
 		$catImg[$categoryid] = $catimg = "<img".($categoryrow['class_name'] ? " class=\"".$categoryrow['class_name']."\"" : "")." src=\"pic/cattrans.gif\" alt=\"" . $categoryrow["name"] . "\" title=\"" .$categoryrow["name"]. "\" style=\"background-image: url(pic/" . $catimgurl . '/' . $categoryrow["image"].");\" />";
 	}
