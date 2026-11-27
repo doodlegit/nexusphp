@@ -6360,17 +6360,31 @@ function build_search_box_category_table($mode, $checkboxValue, $categoryHrefPre
                     }
                 }
                 $icon = $item->icon;
-                $iconFolder = trim($icon->folder, '/');
-                $langAndFile = sprintf('%s%s',  $icon->multilang == 'yes' ? "$lang/" : "", $item->image);
-                if (file_exists(getFullDirectory("pic/category/$iconFolder/$langAndFile"))) {
-                    $backgroundImagePath = "pic/category/$iconFolder/$langAndFile";
+                if ((int) $item->mode === 0 && (empty($item->image) || !$icon)) {
+                    $categoryName = htmlspecialchars((string) $item->name, ENT_QUOTES, 'UTF-8');
+                    $tdContent = sprintf(
+                        '<input type="checkbox" id="cat%d" name="cat%d" value="%s"%s /> <a href="%scat=%d">%s</a>',
+                        (int) $item->id,
+                        (int) $item->id,
+                        $checkboxValue,
+                        $checked,
+                        $categoryHrefPrefix,
+                        (int) $item->id,
+                        $categoryName
+                    );
                 } else {
-                    $backgroundImagePath = "pic/category/{$searchBox->name}/$iconFolder/$langAndFile";
-                }
-                $tdContent = <<<TDCONTENT
+                    $iconFolder = trim($icon->folder, '/');
+                    $langAndFile = sprintf('%s%s',  $icon->multilang == 'yes' ? "$lang/" : "", $item->image);
+                    if (file_exists(getFullDirectory("pic/category/$iconFolder/$langAndFile"))) {
+                        $backgroundImagePath = "pic/category/$iconFolder/$langAndFile";
+                    } else {
+                        $backgroundImagePath = "pic/category/{$searchBox->name}/$iconFolder/$langAndFile";
+                    }
+                    $tdContent = <<<TDCONTENT
 <input type="checkbox" id="cat{$item->id}" name="cat{$item->id}" value="{$checkboxValue}"{$checked} />
 <a href="{$categoryHrefPrefix}cat={$item->id}"><img src="pic/cattrans.gif" class="{$item->class_name}" alt="{$item->name}" title="{$item->name}" style="background-image: url({$backgroundImagePath})" /></a>
 TDCONTENT;
+                }
             } else {
                 $tdContent = sprintf(
                     "<input name=\"%s_check\" value=\"%s\" class=\"btn medium\" type=\"button\" onclick=\"javascript:SetChecked('%s','%s_check','%s','%s',-1,10)\">",
