@@ -8,7 +8,7 @@ $id = intval($_GET['id'] ?? 0);
 if (!$id)
 	die();
 
-$res = sql_query("SELECT torrents.*, categories.mode as cat_mode, torrent_extras.media_info as technical_info, torrent_extras.descr, torrent_extras.pt_gen FROM torrents LEFT JOIN categories ON category = categories.id left join torrent_extras on torrents.id = torrent_extras.torrent_id WHERE torrents.id = $id");
+$res = sql_query("SELECT torrents.*, categories.mode as cat_mode, torrent_extras.media_info as technical_info, torrent_extras.descr, torrent_extras.pt_gen, torrent_extras.quality FROM torrents LEFT JOIN categories ON category = categories.id left join torrent_extras on torrents.id = torrent_extras.torrent_id WHERE torrents.id = $id");
 $row = mysql_fetch_assoc($res);
 if (!$row) die();
 
@@ -26,6 +26,74 @@ if ($enablespecial == 'yes' && user_can('movetorrent'))
 else $allowmove = false;
 
 $sectionmode = $row['cat_mode'];
+$isNoneMode = (int) $sectionmode === 0;
+$descriptionTemplateNone = "[b]Type:\n"
+    . "Aired:\n"
+    . "Duration:\n"
+    . "Episodes:\n"
+    . "Rating: of 10\n"
+    . "Studios:\n"
+    . "Genres:\n\n"
+    . "Synopsis:\n\n\n"
+    . "Screenshots:[/b]";
+$descriptionTemplateChd = "[b]Content Info[/b]\n"
+    . "Main:\n"
+    . "English:\n"
+    . "Japanese:\n"
+    . "Type:\n"
+    . "Aired:\n"
+    . "Duration:\n"
+    . "Episodes:\n"
+    . "Rating: of 10\n"
+    . "Studios:\n"
+    . "Genres:\n\n"
+    . "[b]Synopsis[/b]\n\n\n"
+    . "[b]Screenshots[/b]\n";
+$qualityInputForMode = static function (int $mode) use ($row): string {
+    if ($mode !== 0) {
+        return '';
+    }
+
+    $qualityOptions = \App\Models\TorrentExtra::query()
+        ->whereNotNull('quality')
+        ->where('quality', '!=', '')
+        ->whereHas('torrent.basic_category', fn ($query) => $query->where('mode', $mode))
+        ->distinct()
+        ->orderBy('quality')
+        ->pluck('quality');
+    $datalistId = 'quality-options-edit-' . $mode;
+    $options = '';
+    foreach ($qualityOptions as $qualityOption) {
+        $options .= '<option value="' . htmlspecialchars($qualityOption, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"></option>';
+    }
+
+    return '<br><input type="text" name="quality[' . $mode . ']" value="'
+        . htmlspecialchars((string) ($row['quality'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+        . '" list="' . $datalistId . '" maxlength="255" style="width: 99%;" />'
+        . '<datalist id="' . $datalistId . '">' . $options . '</datalist>'
+        . '<br><small class="text-muted">(e.g. Blu-Ray, DVD, UHD etc)</small>';
+};
+$tagInputForMode = static function (int $mode) use ($tagRep, $tagIdArr): string {
+    $tagCheckboxes = $tagRep->renderCheckbox($mode, $tagIdArr);
+    if ($mode !== 0) {
+        return $tagCheckboxes;
+    }
+
+    $tagQuery = \App\Models\Tag::query()->where('mode', $mode)->orderBy('name');
+    if (!user_can('torrent-set-special-tag')) {
+        $tagQuery->whereNotIn('id', \App\Models\Tag::listSpecial());
+    }
+    $datalistId = 'tag-options-edit-' . $mode;
+    $options = '';
+    foreach ($tagQuery->pluck('name') as $tagOption) {
+        $options .= '<option value="' . htmlspecialchars($tagOption, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"></option>';
+    }
+
+    return $tagCheckboxes
+        . '<br><input type="text" name="tag_name[' . $mode . ']" value="" list="' . $datalistId . '" maxlength="255" style="width: 99%;" />'
+        . '<datalist id="' . $datalistId . '">' . $options . '</datalist>'
+        . ($mode === 0 ? '<br><small class="text-muted">(e.g. Crime, Horror, Anime etc)</small>' : '');
+};
 if ($sectionmode == $browsecatmode)
 {
 	$othermode = $specialcatmode;
@@ -92,8 +160,16 @@ else {
         tr(nexus_trans('label.torrent.price'), '<input type="number" min="0" name="price" value="'.$row['price'].'" placeholder="'.$pricePlaceholder.'" />&nbsp;&nbsp;' . nexus_trans('label.torrent.price_help', ['tax_factor' => (floatval(get_setting('torrent.tax_factor', 0)) * 100) . '%']), 1);
     }
 
-    print("<tr><td class=\"rowhead\">Content Info<font color=\"red\">*</font></td><td class=\"rowfollow\">");
-	textbbcode("edittorrent","descr",($row["descr"]), false, 130, true, true);
+    $descriptionValue = $row['descr'];
+    $descriptionLabel = $lang_edit['row_description'];
+    if ($isNoneMode) {
+        $descriptionValue = $descriptionTemplateNone;
+        $descriptionLabel = 'Content Info';
+    }
+    $modeAwareContentInfo = $allowmove && (int) $sectionmode !== (int) $othermode
+        && ((int) $sectionmode === 0 || (int) $othermode === 0);
+    print("<tr><td id=\"edit-content-info-label\" class=\"rowhead\">" . htmlspecialchars($descriptionLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "<font color=\"red\">*</font></td><td class=\"rowfollow\">");
+	textbbcode("edittorrent","descr",$descriptionValue, false, 130, true, $modeAwareContentInfo ? 'mode' : $isNoneMode);
 	print("</td></tr>");
 
     if ($settingMain['enable_technical_info'] == 'yes') {
@@ -171,18 +247,30 @@ else {
 	}
 */
 
-    $sectionCurrent = $searchBoxRep->renderTaxonomySelect($sectionmode, $row);
+    $sectionCurrent = (int) $sectionmode === 0 ? '' : $searchBoxRep->renderTaxonomySelect($sectionmode, $row);
+    $sectionCurrent .= $qualityInputForMode((int) $sectionmode);
     tr($lang_edit['row_quality'], $sectionCurrent, 1, "mode_$sectionmode");
+    if ((int) $sectionmode === 0) {
+        tr($lang_functions['text_tags'], $tagInputForMode((int) $sectionmode), 1, "mode_$sectionmode");
+    }
     echo $customField->renderOnUploadPage($id, $sectionmode);
     echo $hitAndRunRep->renderOnUploadPage($row['hr'], $sectionmode);
-    tr($lang_functions['text_tags'], $tagRep->renderCheckbox($sectionmode, $tagIdArr), 1, "mode_$sectionmode");
+    if ((int) $sectionmode !== 0) {
+        tr($lang_functions['text_tags'], $tagInputForMode((int) $sectionmode), 1, "mode_$sectionmode");
+    }
 
-    if ($allowmove && $othermode) {
-        $selectOther = $searchBoxRep->renderTaxonomySelect($othermode, $row);
+    if ($allowmove && $othermode !== null) {
+        $selectOther = (int) $othermode === 0 ? '' : $searchBoxRep->renderTaxonomySelect($othermode, $row);
+        $selectOther .= $qualityInputForMode((int) $othermode);
         tr($lang_edit['row_quality'], $selectOther, 1, "mode_$othermode");
+        if ((int) $othermode === 0) {
+            tr($lang_functions['text_tags'], $tagInputForMode((int) $othermode), 1, "mode_$othermode");
+        }
         echo $customField->renderOnUploadPage($id, $othermode);
         echo $hitAndRunRep->renderOnUploadPage($row['hr'], $othermode);
-        tr($lang_functions['text_tags'], $tagRep->renderCheckbox($othermode, $tagIdArr), 1, "mode_$othermode");
+        if ((int) $othermode !== 0) {
+            tr($lang_functions['text_tags'], $tagInputForMode((int) $othermode), 1, "mode_$othermode");
+        }
     }
 
 	$rowChecks = [];
@@ -313,7 +401,14 @@ EOT;
 }
 \Nexus\Nexus::js('vendor/jquery-loading/jquery.loading.min.js', 'footer', true);
 \Nexus\Nexus::js('js/ptgen.js', 'footer', true);
+$descriptionTemplateNoneJson = json_encode($descriptionTemplateNone, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+$descriptionTemplateChdJson = json_encode($descriptionTemplateChd, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+$descriptionLabelChdJson = json_encode($lang_edit['row_description'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 $customFieldJs = <<<JS
+const descriptionTemplates = {
+    none: {$descriptionTemplateNoneJson},
+    chd: {$descriptionTemplateChdJson}
+};
 jQuery("#movecheck").on("change", function () {
     let _this = jQuery(this);
     let checked = _this.prop("checked");
@@ -324,12 +419,35 @@ jQuery("#movecheck").on("change", function () {
         activeSelect = jQuery("#oricat");
     }
     let mode = activeSelect.attr("data-mode");
-    console.log(mode)
     jQuery("tr[relation]").hide();
     jQuery("tr[relation=mode_" + mode +"]").show();
+    updateContentInfoMode(mode);
 })
 jQuery("tr[relation]").hide();
 jQuery("tr[relation=mode_{$sectionmode}]").show();
+function updateContentInfoMode(mode) {
+    const isNone = Number(mode) === 0;
+    const descr = document.getElementById("descr");
+    if (descr.value === descriptionTemplates.none || descr.value === descriptionTemplates.chd) {
+        descr.value = isNone ? descriptionTemplates.none : descriptionTemplates.chd;
+    }
+    document.getElementById("edit-content-info-label").innerHTML =
+        (isNone ? "Content Info" : {$descriptionLabelChdJson}) + '<font color="red">*</font>';
+    jQuery(".bbcode-toolbar-for-none").toggle(isNone);
+    jQuery(".bbcode-toolbar-for-chd").toggle(!isNone);
+    jQuery("#edittorrent-descr-attachment-row").toggle(!isNone);
+    const editorLayout = document.getElementById("edittorrent-descr-editor-layout");
+    if (editorLayout) {
+        if (isNone) {
+            editorLayout.style.cssText = "display: flex; gap: 8px; width: 100%; align-items: flex-start";
+            descr.style.flex = "1 1 100%";
+        } else {
+            editorLayout.removeAttribute("style");
+            descr.style.flex = "";
+        }
+    }
+}
+updateContentInfoMode({$sectionmode});
 
 JS;
 \Nexus\Nexus::js($customFieldJs, 'footer', false);

@@ -798,12 +798,15 @@ function textbbcode($form,$text,$content="",$hastitle=false, $col_num = 130, $wi
 {
 	global $lang_functions;
 	global $subject, $BASEURL, $CURUSER, $enableattach_attachment;
+    $modeAwareToolbar = $compactToolbar === 'mode';
+    $compactToolbar = (bool) $compactToolbar;
 	$editTbodyId = "$form-$text-edit";
 	$previewTbodyId = "$form-$text-preview";
 	$btnEditId = "$form-$text-btn-edit";
     $btnPreviewId = "$form-$text-btn-preview";
     $attachmentRowId = "$form-$text-attachment-row";
     $splitPreviewId = "$form-$text-split-preview";
+    $editorLayoutId = "$form-$text-editor-layout";
     $smiliesCellId = "$form-$text-smilies";
 ?>
 
@@ -1093,7 +1096,7 @@ function insertMediaBBCode(tag) {
 .compact-bbcode-toolbar button { width: 28px; height: 26px; padding: 2px; border: 1px solid #ccc; border-radius: 3px; background: #f7f7f7; color: #555; cursor: pointer; }
 .compact-bbcode-toolbar button:hover { background: #eee; }
 </style>
-<div class="compact-bbcode-toolbar">
+<div class="compact-bbcode-toolbar<?php echo $modeAwareToolbar ? ' bbcode-toolbar-for-none' : '' ?>">
     <button type="button" name="b" value="B" title="Bold" aria-label="Bold" onclick="simpletag('b')"><b>B</b></button>
     <button type="button" name="i" value="I" title="Italic" aria-label="Italic" onclick="simpletag('i')"><i>I</i></button>
     <button type="button" name="u" value="U" title="Underline" aria-label="Underline" onclick="simpletag('u')"><u>U</u></button>
@@ -1156,7 +1159,9 @@ function insertMediaBBCode(tag) {
     <button type="button" id="<?php echo $btnPreviewId ?>" title="<?php echo htmlspecialchars($lang_functions['submit_preview'], ENT_QUOTES, 'UTF-8') ?>" aria-label="<?php echo htmlspecialchars($lang_functions['submit_preview'], ENT_QUOTES, 'UTF-8') ?>" onclick="textBBCodePreview()">&#9673;</button>
     <?php } ?>
 </div>
-<?php } else { ?>
+<?php } ?>
+<?php if (!$compactToolbar || $modeAwareToolbar) { ?>
+<div class="bbcode-toolbar-for-chd"<?php echo $modeAwareToolbar ? ' style="display: none"' : '' ?>>
 <table cellspacing="1" cellpadding="2" border="0">
 <tr>
 <td class="embedded"><input style="font-weight: bold;font-size:11px; margin-right:3px" type="button" name="b" value="B" onclick="javascript: simpletag('b')" /></td>
@@ -1249,6 +1254,10 @@ print("<td class=\"embedded\"><input type=\"button\" style=\"font-size:11px;marg
 <option value="7">7</option>
 </select></td></tr>
 </table>
+<?php if ($modeAwareToolbar && $withPreview) { ?>
+<input type="button" class="btn" value="<?php echo htmlspecialchars($lang_functions['submit_preview'], ENT_QUOTES, 'UTF-8') ?>" onclick="textBBCodePreview()">
+<?php } ?>
+</div>
 <?php } ?>
 </td>
 </tr>
@@ -1263,7 +1272,7 @@ if ($enableattach_attachment == 'yes'){
 <?php
 }
 print("<tr>");
-print("<td align=\"left\">".($compactToolbar ? '<div style="display: flex; gap: 8px; width: 100%; align-items: flex-start">' : ""));
+print("<td align=\"left\">".($compactToolbar ? '<div id="'.$editorLayoutId.'" class="bbcode-editor-layout" style="display: flex; gap: 8px; width: 100%; align-items: flex-start">' : ""));
 print("<textarea class=\"bbcode\" cols=\"100\" style=\"width: 100%;".($compactToolbar ? " flex: 1 1 100%;" : "")."\" name=\"".$text."\" id=\"".$text."\" rows=\"20\" onkeydown=\"ctrlenter(event,'compose','qr')\">".$content."</textarea>");
 if ($compactToolbar) {
     print("<div id=\"".$splitPreviewId."\" class=\"rowfollow\" style=\"display: none; flex: 1 1 50%; min-width: 0; vertical-align: top\"></div></div>");

@@ -152,7 +152,8 @@ stdhead($lang_upload['head_upload']);
                     . '<label><input type="radio" name="poster_source" value="file"> Upload Image File</label><br>'
                     . '<input type="url" name="poster_url" id="poster_url" style="width: 99%;" placeholder="For your own poster use direct link to the image; leave empty for scraper imported image">'
                     . '<input type="file" name="poster_file" id="poster_file" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">',
-                    1
+                    1,
+                    'mode_0'
                 );
 				if ($enablenfo_main=='yes') {
                     tr($lang_upload['row_nfo_file'], "<input type=\"file\" class=\"file\" name=\"nfo\" /><br /><font class=\"medium\">".$lang_upload['text_only_viewed_by'].get_user_class_name($viewnfo_class,false,true,true).$lang_upload['text_or_above']."</font>", 1);
@@ -167,21 +168,35 @@ stdhead($lang_upload['head_upload']);
                     tr(nexus_trans('label.torrent.price'), '<input type="number" min="0" name="price" placeholder="'.$pricePlaceholder.'" />&nbsp;&nbsp;' . nexus_trans('label.torrent.price_help', ['tax_factor' => (floatval(get_setting('torrent.tax_factor', 0)) * 100) . '%']), 1);
                 }
 
-				print("<tr><td class=\"rowhead\" style='padding: 3px' valign=\"top\">Content Info<font color=\"red\">*</font></td><td class=\"rowfollow\">");
-				$descriptionTemplate = "[b]Content Info[/b]\n"
-				    . "Main:\n"
-				    . "English:\n"
-				    . "Japanese:\n"
-				    . "Type:\n"
+                $descriptionTemplateNone = "[b]Type:\n"
 				    . "Aired:\n"
 				    . "Duration:\n"
 				    . "Episodes:\n"
 				    . "Rating: of 10\n"
 				    . "Studios:\n"
 				    . "Genres:\n\n"
-				    . "[b]Synopsis[/b]\n\n\n"
-				    . "[b]Screenshots[/b]\n";
-				textbbcode("upload","descr", $descriptionTemplate, false, 130, true, true);
+				    . "Synopsis:\n\n\n"
+				    . "Screenshots:[/b]";
+                $descriptionTemplateChd = "[b]Content Info[/b]\n"
+                    . "Main:\n"
+                    . "English:\n"
+                    . "Japanese:\n"
+                    . "Type:\n"
+                    . "Aired:\n"
+                    . "Duration:\n"
+                    . "Episodes:\n"
+                    . "Rating: of 10\n"
+                    . "Studios:\n"
+                    . "Genres:\n\n"
+                    . "[b]Synopsis[/b]\n\n\n"
+                    . "[b]Screenshots[/b]\n";
+                $initialUploadMode = $uploadModes[0] ?? (int) $browsecatmode;
+                $descriptionTemplate = $initialUploadMode === 0 ? $descriptionTemplateNone : $descriptionTemplateChd;
+                $descriptionLabel = $initialUploadMode === 0 ? 'Content Info' : $lang_upload['row_description'];
+                print("<tr><td id=\"content-info-label\" class=\"rowhead\" style='padding: 3px' valign=\"top\">"
+                    . htmlspecialchars($descriptionLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                    . "<font color=\"red\">*</font></td><td class=\"rowfollow\">");
+				textbbcode("upload","descr", $descriptionTemplate, false, 130, true, 'mode');
 				print("</td></tr>\n");
 
                 if ($settingMain['enable_technical_info'] == 'yes') {
@@ -389,18 +404,46 @@ JS;
 <?php
 \Nexus\Nexus::js('vendor/jquery-loading/jquery.loading.min.js', 'footer', true);
 \Nexus\Nexus::js('js/ptgen.js', 'footer', true);
+$descriptionTemplateNoneJson = json_encode($descriptionTemplateNone, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+$descriptionTemplateChdJson = json_encode($descriptionTemplateChd, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+$descriptionLabelChdJson = json_encode($lang_upload['row_description'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 $customFieldJs = <<<JS
+const descriptionTemplates = {
+    none: {$descriptionTemplateNoneJson},
+    chd: {$descriptionTemplateChdJson}
+};
+function updateContentInfoMode(mode) {
+    const isNone = Number(mode) === 0;
+    const descr = document.getElementById("descr");
+    if (descr.value === descriptionTemplates.none || descr.value === descriptionTemplates.chd) {
+        descr.value = isNone ? descriptionTemplates.none : descriptionTemplates.chd;
+    }
+    document.getElementById("content-info-label").innerHTML =
+        (isNone ? "Content Info" : {$descriptionLabelChdJson}) + '<font color="red">*</font>';
+    jQuery(".bbcode-toolbar-for-none").toggle(isNone);
+    jQuery(".bbcode-toolbar-for-chd").toggle(!isNone);
+    jQuery("#upload-descr-attachment-row").toggle(!isNone);
+    const editorLayout = document.getElementById("upload-descr-editor-layout");
+    if (isNone) {
+        editorLayout.style.cssText = "display: flex; gap: 8px; width: 100%; align-items: flex-start";
+        descr.style.flex = "1 1 100%";
+    } else {
+        editorLayout.removeAttribute("style");
+        descr.style.flex = "";
+    }
+}
 jQuery("#compose").on("change", "select[name=type]", function () {
     let _this = jQuery(this);
     let mode = _this.attr("data-mode");
     let value = _this.val();
-    console.log(mode)
     jQuery("tr[relation]").hide();
     if (value > 0) {
         jQuery("tr[relation=mode_" + mode +"]").show();
     }
+    updateContentInfoMode(mode);
 })
 jQuery("tr[relation]").hide();
+updateContentInfoMode({$initialUploadMode});
 JS;
 \Nexus\Nexus::js($customFieldJs, 'footer', false);
 $posterInputJs = <<<JS

@@ -400,64 +400,66 @@ if ($standaloneForumId === 0) {
 $descriptionArr = format_description($descr);
 $cover = get_image_from_description($descriptionArr, true, false);
 $posterSource = $_POST['poster_source'] ?? 'link';
-if (!is_string($posterSource) || !in_array($posterSource, ['link', 'file'], true)) {
-    bark('Invalid poster source.');
-}
-$posterUrl = $_POST['poster_url'] ?? '';
-if (!is_string($posterUrl)) {
-    bark('Invalid poster URL.');
-}
-$posterUrl = trim($posterUrl);
-if ($posterSource === 'link' && $posterUrl !== '') {
-    $posterUrlScheme = strtolower((string) parse_url($posterUrl, PHP_URL_SCHEME));
-    if (
-        filter_var($posterUrl, FILTER_VALIDATE_URL) === false
-        || !in_array($posterUrlScheme, ['http', 'https'], true)
-        || preg_match('/[\x00-\x20"\'<>`]/', $posterUrl)
-    ) {
-        bark('Please enter a valid HTTP or HTTPS poster URL.');
+if ($catmod === 0) {
+    if (!is_string($posterSource) || !in_array($posterSource, ['link', 'file'], true)) {
+        bark('Invalid poster source.');
     }
-    $cover = $posterUrl;
-} elseif ($posterSource === 'file') {
-    $posterFile = $_FILES['poster_file'] ?? null;
-    if (!is_array($posterFile) || !isset($posterFile['error'], $posterFile['tmp_name'], $posterFile['size'])) {
-        bark('Invalid poster image upload.');
+    $posterUrl = $_POST['poster_url'] ?? '';
+    if (!is_string($posterUrl)) {
+        bark('Invalid poster URL.');
     }
-    if ((int) $posterFile['error'] !== UPLOAD_ERR_NO_FILE) {
-        if ((int) $posterFile['error'] !== UPLOAD_ERR_OK || (int) $posterFile['size'] < 1 || (int) $posterFile['size'] > 5 * 1024 * 1024) {
-            bark('Poster image must be a valid image no larger than 5 MB.');
+    $posterUrl = trim($posterUrl);
+    if ($posterSource === 'link' && $posterUrl !== '') {
+        $posterUrlScheme = strtolower((string) parse_url($posterUrl, PHP_URL_SCHEME));
+        if (
+            filter_var($posterUrl, FILTER_VALIDATE_URL) === false
+            || !in_array($posterUrlScheme, ['http', 'https'], true)
+            || preg_match('/[\x00-\x20"\'<>`]/', $posterUrl)
+        ) {
+            bark('Please enter a valid HTTP or HTTPS poster URL.');
         }
-        if (!is_uploaded_file($posterFile['tmp_name'])) {
-            bark('Poster image upload failed.');
+        $cover = $posterUrl;
+    } elseif ($posterSource === 'file') {
+        $posterFile = $_FILES['poster_file'] ?? null;
+        if (!is_array($posterFile) || !isset($posterFile['error'], $posterFile['tmp_name'], $posterFile['size'])) {
+            bark('Invalid poster image upload.');
         }
-        $imageInfo = getimagesize($posterFile['tmp_name']);
-        $imageExtensions = [
-            IMAGETYPE_JPEG => 'jpg',
-            IMAGETYPE_PNG => 'png',
-            IMAGETYPE_GIF => 'gif',
-            IMAGETYPE_WEBP => 'webp',
-        ];
-        $imageType = is_array($imageInfo) ? ($imageInfo[2] ?? null) : null;
-        if (!isset($imageExtensions[$imageType])) {
-            bark('Poster must be a JPEG, PNG, GIF, or WebP image.');
-        }
+        if ((int) $posterFile['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ((int) $posterFile['error'] !== UPLOAD_ERR_OK || (int) $posterFile['size'] < 1 || (int) $posterFile['size'] > 5 * 1024 * 1024) {
+                bark('Poster image must be a valid image no larger than 5 MB.');
+            }
+            if (!is_uploaded_file($posterFile['tmp_name'])) {
+                bark('Poster image upload failed.');
+            }
+            $imageInfo = getimagesize($posterFile['tmp_name']);
+            $imageExtensions = [
+                IMAGETYPE_JPEG => 'jpg',
+                IMAGETYPE_PNG => 'png',
+                IMAGETYPE_GIF => 'gif',
+                IMAGETYPE_WEBP => 'webp',
+            ];
+            $imageType = is_array($imageInfo) ? ($imageInfo[2] ?? null) : null;
+            if (!isset($imageExtensions[$imageType])) {
+                bark('Poster must be a JPEG, PNG, GIF, or WebP image.');
+            }
 
-        $posterDirectory = getFullDirectory($bitbucket);
-        if (!is_dir($posterDirectory) || !is_writable($posterDirectory)) {
-            bark('Poster image directory is not writable.');
-        }
-        $posterFilename = 'torrent-poster-' . bin2hex(random_bytes(16)) . '.' . $imageExtensions[$imageType];
-        $posterPath = $posterDirectory . DIRECTORY_SEPARATOR . $posterFilename;
-        if (!move_uploaded_file($posterFile['tmp_name'], $posterPath)) {
-            bark('Failed to save poster image.');
-        }
+            $posterDirectory = getFullDirectory($bitbucket);
+            if (!is_dir($posterDirectory) || !is_writable($posterDirectory)) {
+                bark('Poster image directory is not writable.');
+            }
+            $posterFilename = 'torrent-poster-' . bin2hex(random_bytes(16)) . '.' . $imageExtensions[$imageType];
+            $posterPath = $posterDirectory . DIRECTORY_SEPARATOR . $posterFilename;
+            if (!move_uploaded_file($posterFile['tmp_name'], $posterPath)) {
+                bark('Failed to save poster image.');
+            }
 
-        $posterAdded = sqlesc($dateTimeStringNow);
-        sql_query(
-            "INSERT INTO bitbucket (owner, name, added, public) VALUES ("
-            . (int) $CURUSER['id'] . ", " . sqlesc($posterFilename) . ", " . $posterAdded . ", '1')"
-        ) or sqlerr(__FILE__, __LINE__);
-        $cover = get_protocol_prefix() . $BASEURL . '/' . trim($bitbucket, '/') . '/' . rawurlencode($posterFilename);
+            $posterAdded = sqlesc($dateTimeStringNow);
+            sql_query(
+                "INSERT INTO bitbucket (owner, name, added, public) VALUES ("
+                . (int) $CURUSER['id'] . ", " . sqlesc($posterFilename) . ", " . $posterAdded . ", '1')"
+            ) or sqlerr(__FILE__, __LINE__);
+            $cover = get_protocol_prefix() . $BASEURL . '/' . trim($bitbucket, '/') . '/' . rawurlencode($posterFilename);
+        }
     }
 }
 if (\Nexus\Database\NexusDB::isPgsql()) {

@@ -112,6 +112,36 @@ bark($lang_takeedit['std_missing_form_data']);
 $newcatmode = get_single_value("categories","mode","WHERE id=".sqlesc($catid));
 if (!\App\Models\Category::isUploadable($catid, (int) $newcatmode) && $catid != (int) $row['category'])
 	bark($lang_takeedit['std_missing_form_data']);
+$qualityByMode = $_POST['quality'] ?? [];
+if (!is_array($qualityByMode)) {
+    bark($lang_takeedit['std_missing_form_data']);
+}
+if ((int) $newcatmode === 0 && array_key_exists($newcatmode, $qualityByMode)) {
+    $quality = $qualityByMode[$newcatmode];
+    if (!is_string($quality)) {
+        bark($lang_takeedit['std_missing_form_data']);
+    }
+    $quality = trim($quality);
+    if (mb_strlen($quality) > 255) {
+        bark($lang_takeedit['std_missing_form_data']);
+    }
+    $extraUpdate['quality'] = $quality !== '' ? $quality : null;
+}
+$tagName = '';
+if ((int) $newcatmode === 0) {
+    $tagNameInputs = $_POST['tag_name'] ?? [];
+    if (!is_array($tagNameInputs)) {
+        bark($lang_takeedit['std_missing_form_data']);
+    }
+    $tagName = $tagNameInputs[$newcatmode] ?? '';
+    if (!is_string($tagName)) {
+        bark($lang_takeedit['std_missing_form_data']);
+    }
+    $tagName = trim($tagName);
+    if (mb_strlen($tagName) > 255) {
+        bark($lang_takeedit['std_missing_form_data']);
+    }
+}
 if ($enablespecial == 'yes' && user_can('movetorrent'))
 	$allowmove = true; //enable moving torrent to other section
 else $allowmove = false;
@@ -279,6 +309,25 @@ if (!empty($_POST['custom_fields'][$newcatmode])) {
  * @since v1.6
  */
 $tagIdArr = array_filter($_POST['tags'][$newcatmode] ?? []);
+if ($tagName !== '') {
+    $specialTag = \App\Models\Tag::query()
+        ->whereIn('id', \App\Models\Tag::listSpecial())
+        ->where('name', $tagName)
+        ->first();
+    if ($specialTag) {
+        if (!user_can('torrent-set-special-tag')) {
+            bark('You do not have permission to set this special tag.');
+        }
+        $tag = $specialTag;
+    } else {
+        $tag = \App\Models\Tag::query()->firstOrCreate(
+            ['name' => $tagName, 'mode' => (int) $newcatmode],
+            ['color' => '#777777', 'priority' => 0, 'none_only' => (int) $newcatmode === 0]
+        );
+    }
+    $tagIdArr[] = $tag->id;
+}
+$tagIdArr = array_values(array_unique($tagIdArr));
 insert_torrent_tags($id, $tagIdArr, true);
 
 if($CURUSER["id"] == $row["owner"])
