@@ -146,6 +146,14 @@ stdhead($lang_upload['head_upload']);
                     '<input type="url" name="myanimelist_link" style="width: 99%;" />',
                     1
                 );
+                tr(
+                    'Poster',
+                    '<label><input type="radio" name="poster_source" value="link" checked> Provide Image Link</label> '
+                    . '<label><input type="radio" name="poster_source" value="file"> Upload Image File</label><br>'
+                    . '<input type="url" name="poster_url" id="poster_url" style="width: 99%;" placeholder="For your own poster use direct link to the image; leave empty for scraper imported image">'
+                    . '<input type="file" name="poster_file" id="poster_file" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">',
+                    1
+                );
 				if ($enablenfo_main=='yes') {
                     tr($lang_upload['row_nfo_file'], "<input type=\"file\" class=\"file\" name=\"nfo\" /><br /><font class=\"medium\">".$lang_upload['text_only_viewed_by'].get_user_class_name($viewnfo_class,false,true,true).$lang_upload['text_or_above']."</font>", 1);
                 }
@@ -159,8 +167,21 @@ stdhead($lang_upload['head_upload']);
                     tr(nexus_trans('label.torrent.price'), '<input type="number" min="0" name="price" placeholder="'.$pricePlaceholder.'" />&nbsp;&nbsp;' . nexus_trans('label.torrent.price_help', ['tax_factor' => (floatval(get_setting('torrent.tax_factor', 0)) * 100) . '%']), 1);
                 }
 
-				print("<tr><td class=\"rowhead\" style='padding: 3px' valign=\"top\">".$lang_upload['row_description']."<font color=\"red\">*</font></td><td class=\"rowfollow\">");
-				textbbcode("upload","descr", "", false, 130, true);
+				print("<tr><td class=\"rowhead\" style='padding: 3px' valign=\"top\">Content Info<font color=\"red\">*</font></td><td class=\"rowfollow\">");
+				$descriptionTemplate = "[b]Content Info[/b]\n"
+				    . "Main:\n"
+				    . "English:\n"
+				    . "Japanese:\n"
+				    . "Type:\n"
+				    . "Aired:\n"
+				    . "Duration:\n"
+				    . "Episodes:\n"
+				    . "Rating: of 10\n"
+				    . "Studios:\n"
+				    . "Genres:\n\n"
+				    . "[b]Synopsis[/b]\n\n\n"
+				    . "[b]Screenshots[/b]\n";
+				textbbcode("upload","descr", $descriptionTemplate, false, 130, true);
 				print("</td></tr>\n");
 
                 if ($settingMain['enable_technical_info'] == 'yes') {
@@ -382,4 +403,12 @@ jQuery("#compose").on("change", "select[name=type]", function () {
 jQuery("tr[relation]").hide();
 JS;
 \Nexus\Nexus::js($customFieldJs, 'footer', false);
+$posterInputJs = <<<JS
+jQuery("#compose").on("change", "input[name=poster_source]", function () {
+    const useFile = jQuery("input[name=poster_source]:checked").val() === "file";
+    jQuery("#poster_url").toggle(!useFile).prop("disabled", useFile);
+    jQuery("#poster_file").toggle(useFile).prop("disabled", !useFile);
+})
+JS;
+\Nexus\Nexus::js($posterInputJs, 'footer', false);
 stdfoot();
