@@ -531,9 +531,20 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
 		$j++;
 	}
     if ($image_gallery) {
-        $s = preg_replace(
-            '/<\/span>(?:\s|<br\s*\/?>)*(?=<span class="torrent-screenshot-thumbnail">)/i',
-            '</span>',
+        $s = preg_replace_callback(
+            '/(<span class="torrent-screenshot-thumbnail"[^>]*>.*?<\/span>(?:\s|<br\s*\/?>)*)+/is',
+            function ($matches) {
+                $gallery = preg_replace(
+                    '/<\/span>(?:\s|<br\s*\/?>)*(?=<span class="torrent-screenshot-thumbnail")/i',
+                    '</span>',
+                    $matches[0]
+                );
+                $gallery = preg_replace('/(?:\s|<br\s*\/?>)+$/i', '', $gallery);
+
+                return '<div class="torrent-screenshot-gallery" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; margin: 8px 0;">'
+                    . $gallery
+                    . '</div>';
+            },
             $s
         );
     }

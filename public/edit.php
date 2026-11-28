@@ -145,6 +145,19 @@ else {
         echo $ptGen->renderUploadPageFormInput($row['pt_gen']);
     }
 
+    if ($isNoneMode || ($allowmove && (int) $othermode === 0)) {
+        tr(
+            'Poster',
+            '<label><input type="radio" name="poster_source" value="link" checked> Provide Image Link</label> '
+            . '<label><input type="radio" name="poster_source" value="file"> Upload Image File</label><br>'
+            . '<input type="url" name="poster_url" id="poster_url" style="width: 99%;" value="'
+            . htmlspecialchars((string) ($row['cover'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            . '" placeholder="Provide a direct image link">'
+            . '<input type="file" name="poster_file" id="poster_file" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">',
+            1
+        );
+    }
+
 	if ($enablenfo_main=='yes')
 		tr($lang_edit['row_nfo_file'], "<font class=\"medium\"><input type=\"radio\" name=\"nfoaction\" value=\"keep\" checked=\"checked\" />".$lang_edit['radio_keep_current'].
 	"<input type=\"radio\" name=\"nfoaction\" value=\"remove\" />".$lang_edit['radio_remove'].
@@ -434,6 +447,7 @@ function updateContentInfoMode(mode) {
     }
     document.getElementById("edit-content-info-label").innerHTML =
         (isNone ? "Content Info" : {$descriptionLabelChdJson}) + '<font color="red">*</font>';
+    jQuery("input[name=poster_source]").closest("tr").toggle(isNone);
     jQuery(".bbcode-toolbar-for-none").toggle(isNone);
     jQuery(".bbcode-toolbar-for-chd").toggle(!isNone);
     jQuery("#edittorrent-descr-attachment-row").toggle(!isNone);
@@ -452,6 +466,14 @@ updateContentInfoMode({$sectionmode});
 
 JS;
 \Nexus\Nexus::js($customFieldJs, 'footer', false);
+$posterInputJs = <<<JS
+jQuery("#compose").on("change", "input[name=poster_source]", function () {
+    const useFile = jQuery("input[name=poster_source]:checked").val() === "file";
+    jQuery("#poster_url").toggle(!useFile).prop("disabled", useFile);
+    jQuery("#poster_file").toggle(useFile).prop("disabled", !useFile);
+})
+JS;
+\Nexus\Nexus::js($posterInputJs, 'footer', false);
 stdfoot();
 function getAddedTimeOption($timeStamp, $addSeconds) {
     $timeStamp += $addSeconds;

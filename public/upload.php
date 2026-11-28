@@ -152,8 +152,7 @@ stdhead($lang_upload['head_upload']);
                     . '<label><input type="radio" name="poster_source" value="file"> Upload Image File</label><br>'
                     . '<input type="url" name="poster_url" id="poster_url" style="width: 99%;" placeholder="For your own poster use direct link to the image; leave empty for scraper imported image">'
                     . '<input type="file" name="poster_file" id="poster_file" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">',
-                    1,
-                    'mode_0'
+                    1
                 );
 				if ($enablenfo_main=='yes') {
                     tr($lang_upload['row_nfo_file'], "<input type=\"file\" class=\"file\" name=\"nfo\" /><br /><font class=\"medium\">".$lang_upload['text_only_viewed_by'].get_user_class_name($viewnfo_class,false,true,true).$lang_upload['text_or_above']."</font>", 1);
@@ -421,6 +420,7 @@ function updateContentInfoMode(mode) {
     }
     document.getElementById("content-info-label").innerHTML =
         (isNone ? "Content Info" : {$descriptionLabelChdJson}) + '<font color="red">*</font>';
+    jQuery("input[name=poster_source]").closest("tr").toggle(isNone);
     jQuery(".bbcode-toolbar-for-none").toggle(isNone);
     jQuery(".bbcode-toolbar-for-chd").toggle(!isNone);
     jQuery("#upload-descr-attachment-row").toggle(!isNone);

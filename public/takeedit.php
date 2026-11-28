@@ -25,7 +25,7 @@ if (!$id)
 	die();
 
 
-$res = sql_query("SELECT id, category, owner, filename, save_as, anonymous, picktype, picktime, added, banned FROM torrents WHERE id = ".mysql_real_escape_string($id));
+$res = sql_query("SELECT id, category, owner, filename, save_as, anonymous, picktype, picktime, added, banned, cover FROM torrents WHERE id = ".mysql_real_escape_string($id));
 $row = mysql_fetch_array($res);
 $torrentAddedTimeString = $row['added'];
 if (!$row)
@@ -269,6 +269,73 @@ if(user_can('torrentmanage') && ($CURUSER['picker'] == 'yes' || get_user_class()
  */
 $descriptionArr = format_description($descr);
 $cover = get_image_from_description($descriptionArr, true, false);
+if ((int) $newcatmode === 0) {
+    $cover = $row['cover'] ?: $cover;
+    $posterSource = $_POST['poster_source'] ?? 'link';
+    if (!is_string($posterSource) || !in_array($posterSource, ['link', 'file'], true)) {
+        bark('Invalid poster source.');
+    }
+
+    if ($posterSource === 'link') {
+        $posterUrl = $_POST['poster_url'] ?? '';
+        if (!is_string($posterUrl)) {
+            bark('Invalid poster URL.');
+        }
+        $posterUrl = trim($posterUrl);
+        if ($posterUrl !== '') {
+            $posterUrlScheme = strtolower((string) parse_url($posterUrl, PHP_URL_SCHEME));
+            if (
+                filter_var($posterUrl, FILTER_VALIDATE_URL) === false
+                || !in_array($posterUrlScheme, ['http', 'https'], true)
+                || preg_match('/[\x00-\x20"\'<>`]/', $posterUrl)
+            ) {
+                bark('Please enter a valid HTTP or HTTPS poster URL.');
+            }
+            $cover = $posterUrl;
+        }
+    } else {
+        $posterFile = $_FILES['poster_file'] ?? null;
+        if (!is_array($posterFile) || !isset($posterFile['error'], $posterFile['tmp_name'], $posterFile['size'])) {
+            bark('Invalid poster image upload.');
+        }
+        if ((int) $posterFile['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ((int) $posterFile['error'] !== UPLOAD_ERR_OK || (int) $posterFile['size'] < 1 || (int) $posterFile['size'] > 5 * 1024 * 1024) {
+                bark('Poster image must be a valid image no larger than 5 MB.');
+            }
+            if (!is_uploaded_file($posterFile['tmp_name'])) {
+                bark('Poster image upload failed.');
+            }
+            $imageInfo = getimagesize($posterFile['tmp_name']);
+            $imageExtensions = [
+                IMAGETYPE_JPEG => 'jpg',
+                IMAGETYPE_PNG => 'png',
+                IMAGETYPE_GIF => 'gif',
+                IMAGETYPE_WEBP => 'webp',
+            ];
+            $imageType = is_array($imageInfo) ? ($imageInfo[2] ?? null) : null;
+            if (!isset($imageExtensions[$imageType])) {
+                bark('Poster must be a JPEG, PNG, GIF, or WebP image.');
+            }
+
+            $posterDirectory = getFullDirectory($bitbucket);
+            if (!is_dir($posterDirectory) || !is_writable($posterDirectory)) {
+                bark('Poster image directory is not writable.');
+            }
+            $posterFilename = 'torrent-poster-' . bin2hex(random_bytes(16)) . '.' . $imageExtensions[$imageType];
+            $posterPath = $posterDirectory . DIRECTORY_SEPARATOR . $posterFilename;
+            if (!move_uploaded_file($posterFile['tmp_name'], $posterPath)) {
+                bark('Failed to save poster image.');
+            }
+
+            sql_query(
+                "INSERT INTO bitbucket (owner, name, added, public) VALUES ("
+                . (int) $CURUSER['id'] . ", " . sqlesc($posterFilename) . ", "
+                . sqlesc(date("Y-m-d H:i:s")) . ", '1')"
+            ) or sqlerr(__FILE__, __LINE__);
+            $cover = get_protocol_prefix() . $BASEURL . '/' . trim($bitbucket, '/') . '/' . rawurlencode($posterFilename);
+        }
+    }
+}
 $updateset[] = "cover = " . sqlesc($cover);
 
 /**
