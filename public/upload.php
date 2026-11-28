@@ -415,6 +415,7 @@ const descriptionTemplates = {
 function updateContentInfoMode(mode) {
     const isNone = Number(mode) === 0;
     const descr = document.getElementById("descr");
+    descr.dataset.imageGallery = isNone ? "1" : "0";
     if (descr.value === descriptionTemplates.none || descr.value === descriptionTemplates.chd) {
         descr.value = isNone ? descriptionTemplates.none : descriptionTemplates.chd;
     }

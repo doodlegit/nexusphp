@@ -259,10 +259,11 @@ function formatGalleryImg($src, $alt = 'Screenshot', $imgId = '') {
     $escapedId = htmlspecialchars($imgId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     return addTempCode(
         '<span class="torrent-screenshot-thumbnail" style="display: inline-block; margin: 4px; vertical-align: top;">'
+        . '<a href="' . $escapedSrc . '" target="_blank" rel="noopener noreferrer">'
         . '<img' . ($escapedId !== '' ? ' id="' . $escapedId . '"' : '')
         . ' src="' . $escapedSrc . '" alt="' . $escapedAlt . '"'
-        . ' style="display: block !important; width: 220px !important; height: 125px !important; max-width: 100% !important; object-fit: cover; cursor: zoom-in;"'
-        . ' onclick="Preview(this);" />'
+        . ' style="display: block !important; width: 220px !important; height: 125px !important; max-width: 100% !important; object-fit: cover; cursor: zoom-in;" />'
+        . '</a>'
         . '</span>'
     );
 }
@@ -1088,8 +1089,10 @@ function simpletag(thetag)
 }
 
 function textBBCodePreview() {
-    let poststr = encodeURIComponent( document.getElementById(textareaId).value );
-    let result=ajax.posts('preview.php','body='+poststr);
+    let editor = document.getElementById(textareaId);
+    let poststr = encodeURIComponent(editor.value);
+    let imageGallery = editor.dataset.imageGallery === '1' ? '1' : '0';
+    let result=ajax.posts('preview.php','body='+poststr+'&image_gallery='+imageGallery);
     jQuery('#' + editTbodyId).hide()
     jQuery('#' + previewTbodyId).html(result).show()
     jQuery('#' + btnPreviewId).hide()
@@ -1105,8 +1108,9 @@ function toggleBBCodeSplitPreview() {
         smilies.style.display = '';
         return;
     }
-    let poststr = encodeURIComponent(document.getElementById(textareaId).value);
-    preview.innerHTML = ajax.posts('preview.php', 'body=' + poststr);
+    let poststr = encodeURIComponent(editor.value);
+    let imageGallery = editor.dataset.imageGallery === '1' ? '1' : '0';
+    preview.innerHTML = ajax.posts('preview.php', 'body=' + poststr + '&image_gallery=' + imageGallery);
     preview.style.display = 'block';
     editor.style.flex = '1 1 50%';
     smilies.style.display = 'none';
