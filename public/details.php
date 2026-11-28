@@ -391,7 +391,8 @@ JS;
 
         /**************end custom fields****************/
 
-        if ((int) $row['search_box_id'] === 0 && !empty($row['cover'])) {
+        $isNoneCategory = (int) $row['search_box_id'] === 0;
+        if ($isNoneCategory && !empty($row['cover'])) {
             $posterUrl = trim((string) $row['cover']);
             $posterScheme = strtolower((string) parse_url($posterUrl, PHP_URL_SCHEME));
             if ($posterScheme === '' || in_array($posterScheme, ['http', 'https'], true)) {
@@ -406,7 +407,20 @@ JS;
 
 		if ($CURUSER['showdescription'] != 'no' && !empty($row["descr"])){
             $torrentdetailad=$Advertisement->get_ad('torrentdetail');
-            $desc = format_comment($row['descr']);
+            $desc = format_comment(
+                $row['descr'],
+                true,
+                false,
+                true,
+                true,
+                700,
+                true,
+                true,
+                -1,
+                0,
+                0,
+                $isNoneCategory
+            );
             $desc = apply_filter('torrent_detail_description', $desc, $row['id'], $CURUSER['id']);
             tr("<a href=\"javascript: klappe_news('descr')\"><span class=\"nowrap\"><img class=\"minus\" src=\"pic/trans.gif\" alt=\"Show/Hide\" id=\"picdescr\" title=\"".($lang_details['title_show_or_hide'] ?? '')."\" /> Content Info</span></a>", "<div id='kdescr'>".($Advertisement->enable_ad() && $torrentdetailad ? "<div align=\"left\" style=\"margin-bottom: 10px\" id=\"\">".$torrentdetailad[0]."</div>" : "").$desc."</div>", 1);
 		}

@@ -244,6 +244,22 @@ function formatImg($src, $enableImageResizer, $image_max_width, $image_max_heigh
         " onerror=\"handleImageError(this, '$src');\" />");
 }
 
+function formatGalleryImg($src) {
+    $src = htmlspecialchars_decode($src, ENT_QUOTES | ENT_HTML5);
+    $src = filter_src($src);
+    if (empty($src)) {
+        return "";
+    }
+    $escapedSrc = htmlspecialchars($src, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    return addTempCode(
+        '<span style="display: inline-block; margin: 4px; vertical-align: top;">'
+        . '<img src="' . $escapedSrc . '" alt="Screenshot"'
+        . ' style="display: block; width: 220px; height: 125px; max-width: 100%; object-fit: cover; cursor: zoom-in;"'
+        . ' onclick="Preview(this);" />'
+        . '</span>'
+    );
+}
+
 function formatFlash($src, $width, $height) {
     $src = filter_src($src);
     if (empty($src)) {
@@ -351,7 +367,7 @@ function format_urls($text, $newWindow = false) {
 	    return formatUrl($matches[1], $newWindow, '', 'faqlink');
     }, $text);
 }
-function format_comment($text, $strip_html = true, $xssclean = false, $newtab = true, $imageresizer = true, $image_max_width = 700, $enableimage = true, $enableflash = true , $imagenum = -1, $image_max_height = 0, $adid = 0)
+function format_comment($text, $strip_html = true, $xssclean = false, $newtab = true, $imageresizer = true, $image_max_width = 700, $enableimage = true, $enableflash = true , $imagenum = -1, $image_max_height = 0, $adid = 0, $image_gallery = false)
 {
 	global $lang_functions;
 	global $CURUSER, $SITENAME, $BASEURL;
@@ -364,6 +380,10 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
 	$tempCodeCount = 0;
 	$imageresizer = $imageresizer ? 1 : 0;
 	$s = $text;
+
+    if ($image_gallery) {
+        $s = preg_replace('/(\[\/img\]|\[img=[^\]\r\n]+\])\s*(?=\[img(?:=|\]))/i', '$1', $s);
+    }
 
 	if ($strip_html) {
 		$s = htmlspecialchars($s);
@@ -396,13 +416,17 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
 
 	if ($enableimage) {
 //		$s = preg_replace("/\[img\]([^\<\r\n\"']+?)\[\/img\]/ei", "formatImg('\\1',".$imageresizer.",".$image_max_width.",".$image_max_height.")", $s, $imagenum, $imgReplaceCount);
-		$s = preg_replace_callback("/\[img\]([^\<\r\n\"']+?)\[\/img\]/i", function ($matches) use ($imageresizer, $image_max_width, $image_max_height) {
-		    return formatImg($matches[1],$imageresizer,$image_max_width,$image_max_height);
+		$s = preg_replace_callback("/\[img\]([^\<\r\n\"']+?)\[\/img\]/i", function ($matches) use ($imageresizer, $image_max_width, $image_max_height, $image_gallery) {
+		    return $image_gallery
+                ? formatGalleryImg($matches[1])
+                : formatImg($matches[1],$imageresizer,$image_max_width,$image_max_height);
         }, $s, $imagenum, $imgReplaceCount);
 
 //		$s = preg_replace("/\[img=([^\<\r\n\"']+?)\]/ei", "formatImg('\\1',".$imageresizer.",".$image_max_width.",".$image_max_height.")", $s, ($imagenum != -1 ? max($imagenum-$imgReplaceCount, 0) : -1));
-		$s = preg_replace_callback("/\[img=([^\<\r\n\"']+?)\]/i", function ($matches) use ($imageresizer, $image_max_width, $image_max_height) {
-		    return formatImg($matches[1],$imageresizer,$image_max_width,$image_max_height);
+		$s = preg_replace_callback("/\[img=([^\<\r\n\"']+?)\]/i", function ($matches) use ($imageresizer, $image_max_width, $image_max_height, $image_gallery) {
+		    return $image_gallery
+                ? formatGalleryImg($matches[1])
+                : formatImg($matches[1],$imageresizer,$image_max_width,$image_max_height);
         }, $s, ($imagenum != -1 ? max($imagenum-$imgReplaceCount, 0) : -1));
 	} else {
 		$s = preg_replace("/\[img\]([^\<\r\n\"']+?)\[\/img\]/i", '', $s, -1);
