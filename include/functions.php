@@ -252,9 +252,9 @@ function formatGalleryImg($src) {
     }
     $escapedSrc = htmlspecialchars($src, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     return addTempCode(
-        '<span style="display: inline-block; margin: 4px; vertical-align: top;">'
+        '<span class="torrent-screenshot-thumbnail" style="display: inline-block; margin: 4px; vertical-align: top;">'
         . '<img src="' . $escapedSrc . '" alt="Screenshot"'
-        . ' style="display: block; width: 220px; height: 125px; max-width: 100%; object-fit: cover; cursor: zoom-in;"'
+        . ' style="display: block !important; width: 220px !important; height: 125px !important; max-width: 100% !important; object-fit: cover; cursor: zoom-in;"'
         . ' onclick="Preview(this);" />'
         . '</span>'
     );
@@ -530,6 +530,13 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
 		}
 		$j++;
 	}
+    if ($image_gallery) {
+        $s = preg_replace(
+            '/<\/span>(?:\s|<br\s*\/?>)*(?=<span class="torrent-screenshot-thumbnail">)/i',
+            '</span>',
+            $s
+        );
+    }
     return str_replace('', '', $s);
 }
 
