@@ -3694,9 +3694,9 @@ function torrenttable($rows, $variant = "torrent", $searchBoxId = 0) {
     $tagRep = new \App\Repositories\TagRepository();
 	$torrentTagCollection = \App\Models\TorrentTag::query()->whereIn('torrent_id', $torrentIdArr)->get();
 	$torrentTagResult = $torrentTagCollection->groupBy('torrent_id');
-	$showCover = false;
+	$showCover = (int) $searchBoxId === 0;
     $showSeedBoxIcon = false;
-	if ($searchBoxId) {
+	if ((int) $searchBoxId !== 0) {
 	    $searchBoxExtra = get_searchbox_value($searchBoxId, "extra");
 	    if (!empty($searchBoxExtra[\App\Models\SearchBox::EXTRA_DISPLAY_COVER_ON_TORRENT_LIST])) {
 	        $showCover = true;
@@ -3910,7 +3910,12 @@ foreach ($rows as $row)
                 $coverSrc = $imdb->getMovieCover($imdb_id);
             }
         }
-        $tdCover = sprintf('<td class="embedded" style="text-align: center;width: 46px;height: 46px"><img src="pic/misc/spinner.svg" data-src="%s" class="nexus-lazy-load" style="max-height: 46px;max-width: 46px" /></td>', $coverSrc);
+        if ($coverSrc !== '') {
+            $tdCover = sprintf(
+                '<td class="embedded" style="text-align: center;width: 46px;height: 46px"><img src="pic/misc/spinner.svg" data-src="%s" class="nexus-lazy-load" style="max-height: 46px;max-width: 46px" /></td>',
+                htmlspecialchars($coverSrc, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            );
+        }
     }
 
 	print("<td class=\"rowfollow\" width=\"100%\" align=\"left\" style='padding: 0px'><table class=\"torrentname\" width=\"100%\"><tr" . $sphighlight . ">$tdCover<td class=\"embedded\" style='padding-left: 5px'>".$stickyicon."<a $short_torrent_name_alt $mouseovertorrent href=\"details.php?id=".$id."&amp;hit=1\"><b>".htmlspecialchars($dispname)."</b></a>");

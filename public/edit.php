@@ -170,6 +170,7 @@ else {
         && ((int) $sectionmode === 0 || (int) $othermode === 0);
     print("<tr><td id=\"edit-content-info-label\" class=\"rowhead\">" . htmlspecialchars($descriptionLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "<font color=\"red\">*</font></td><td class=\"rowfollow\">");
 	textbbcode("edittorrent","descr",$descriptionValue, false, 130, true, $modeAwareContentInfo ? 'mode' : $isNoneMode);
+    print('<br><small class="text-muted">For screenshots, use a direct image file URL (for example, https://i.ibb.co/.../image.jpg), not an image-hosting page URL.</small>');
 	print("</td></tr>");
 
     if ($settingMain['enable_technical_info'] == 'yes') {

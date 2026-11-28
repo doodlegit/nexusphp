@@ -12,7 +12,7 @@ die();
 
 $taxonomyFields = "sources.name AS source_name, media.name AS medium_name, codecs.name AS codec_name, standards.name AS standard_name, processings.name AS processing_name, teams.name AS team_name, audiocodecs.name AS audiocodec_name";
 $extraFields = "torrent_extras.descr, torrent_extras.pt_gen, torrent_extras.nfo, torrent_extras.quality, LENGTH(torrent_extras.nfo) AS nfosz, torrent_extras.media_info as technical_info";
-$res = sql_query("SELECT torrents.cache_stamp, torrents.sp_state, torrents.url, torrents.small_descr, torrents.seeders, torrents.banned, torrents.leechers, torrents.info_hash, torrents.filename, torrents.last_action, torrents.name, torrents.owner, torrents.save_as, torrents.visible, torrents.size, torrents.added, torrents.views, torrents.hits, torrents.times_completed, torrents.id, torrents.type, torrents.numfiles, torrents.anonymous, torrents.hr, torrents.promotion_until, torrents.promotion_time_type, torrents.approval_status, torrents.price,
+$res = sql_query("SELECT torrents.cache_stamp, torrents.sp_state, torrents.url, torrents.cover, torrents.small_descr, torrents.seeders, torrents.banned, torrents.leechers, torrents.info_hash, torrents.filename, torrents.last_action, torrents.name, torrents.owner, torrents.save_as, torrents.visible, torrents.size, torrents.added, torrents.views, torrents.hits, torrents.times_completed, torrents.id, torrents.type, torrents.numfiles, torrents.anonymous, torrents.hr, torrents.promotion_until, torrents.promotion_time_type, torrents.approval_status, torrents.price,
        categories.name AS cat_name, categories.mode as search_box_id, $taxonomyFields, $extraFields
 FROM torrents LEFT JOIN categories ON torrents.category = categories.id
     LEFT JOIN sources ON torrents.source = sources.id
@@ -391,11 +391,24 @@ JS;
 
         /**************end custom fields****************/
 
+        if ((int) $row['search_box_id'] === 0 && !empty($row['cover'])) {
+            $posterUrl = trim((string) $row['cover']);
+            $posterScheme = strtolower((string) parse_url($posterUrl, PHP_URL_SCHEME));
+            if ($posterScheme === '' || in_array($posterScheme, ['http', 'https'], true)) {
+                $posterUrl = filter_src($posterUrl);
+                if ($posterUrl !== '') {
+                    $posterHtml = '<img src="' . htmlspecialchars($posterUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                        . '" alt="Poster" style="max-width: 260px; max-height: 390px; object-fit: contain; cursor: zoom-in;" onclick="Preview(this);" />';
+                    tr('Poster', $posterHtml, 1);
+                }
+            }
+        }
+
 		if ($CURUSER['showdescription'] != 'no' && !empty($row["descr"])){
             $torrentdetailad=$Advertisement->get_ad('torrentdetail');
             $desc = format_comment($row['descr']);
             $desc = apply_filter('torrent_detail_description', $desc, $row['id'], $CURUSER['id']);
-            tr("<a href=\"javascript: klappe_news('descr')\"><span class=\"nowrap\"><img class=\"minus\" src=\"pic/trans.gif\" alt=\"Show/Hide\" id=\"picdescr\" title=\"".($lang_details['title_show_or_hide'] ?? '')."\" /> ".$lang_details['row_description']."</span></a>", "<div id='kdescr'>".($Advertisement->enable_ad() && $torrentdetailad ? "<div align=\"left\" style=\"margin-bottom: 10px\" id=\"\">".$torrentdetailad[0]."</div>" : "").$desc."</div>", 1);
+            tr("<a href=\"javascript: klappe_news('descr')\"><span class=\"nowrap\"><img class=\"minus\" src=\"pic/trans.gif\" alt=\"Show/Hide\" id=\"picdescr\" title=\"".($lang_details['title_show_or_hide'] ?? '')."\" /> Content Info</span></a>", "<div id='kdescr'>".($Advertisement->enable_ad() && $torrentdetailad ? "<div align=\"left\" style=\"margin-bottom: 10px\" id=\"\">".$torrentdetailad[0]."</div>" : "").$desc."</div>", 1);
 		}
 
         //technical info

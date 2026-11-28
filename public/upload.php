@@ -197,6 +197,7 @@ stdhead($lang_upload['head_upload']);
                     . htmlspecialchars($descriptionLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
                     . "<font color=\"red\">*</font></td><td class=\"rowfollow\">");
 				textbbcode("upload","descr", $descriptionTemplate, false, 130, true, 'mode');
+                print('<br><small class="text-muted">For screenshots, use a direct image file URL (for example, https://i.ibb.co/.../image.jpg), not an image-hosting page URL.</small>');
 				print("</td></tr>\n");
 
                 if ($settingMain['enable_technical_info'] == 'yes') {
