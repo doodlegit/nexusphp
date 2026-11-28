@@ -92,8 +92,8 @@ else {
         tr(nexus_trans('label.torrent.price'), '<input type="number" min="0" name="price" value="'.$row['price'].'" placeholder="'.$pricePlaceholder.'" />&nbsp;&nbsp;' . nexus_trans('label.torrent.price_help', ['tax_factor' => (floatval(get_setting('torrent.tax_factor', 0)) * 100) . '%']), 1);
     }
 
-    print("<tr><td class=\"rowhead\">".$lang_edit['row_description']."<font color=\"red\">*</font></td><td class=\"rowfollow\">");
-	textbbcode("edittorrent","descr",($row["descr"]), false, 130, true);
+    print("<tr><td class=\"rowhead\">Content Info<font color=\"red\">*</font></td><td class=\"rowfollow\">");
+	textbbcode("edittorrent","descr",($row["descr"]), false, 130, true, true);
 	print("</td></tr>");
 
     if ($settingMain['enable_technical_info'] == 'yes') {
