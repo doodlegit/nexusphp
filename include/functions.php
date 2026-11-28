@@ -129,7 +129,7 @@ function format_quotes($s)
 	return $s;
 }
 
-function print_attachment($dlkey, $enableimage = true, $imageresizer = true)
+function print_attachment($dlkey, $enableimage = true, $imageresizer = true, $imageGallery = false)
 {
 	$httpdirectory_attachment = get_setting('attachment.httpdirectory');
 	if (strlen($dlkey) == 32){
@@ -162,7 +162,11 @@ function print_attachment($dlkey, $enableimage = true, $imageresizer = true)
 			if($imageresizer == true)
 				$onclick = " data-zoomable data-zoom-src=\"".$url."\"";
 			else $onclick = "";
-			$return = "<img id=\"attach".$id."\" style=\"max-width: 700px\" alt=\"".htmlspecialchars($row['filename'])."\" src=\"".$url."\"". $onclick .  " onmouseover=\"domTT_activate(this, event, 'content', '".htmlspecialchars("<strong>".nexus_trans('attachment.size')."</strong>: ".mksize($row['filesize'])."<br />".gettime($row['added']))."', 'styleClass', 'attach', 'x', findPosition(this)[0], 'y', findPosition(this)[1]-58);\" />";
+            if ($imageGallery) {
+                $return = formatGalleryImg($url, $row['filename'], "attach" . $id);
+            } else {
+			    $return = "<img id=\"attach".$id."\" style=\"max-width: 700px\" alt=\"".htmlspecialchars($row['filename'])."\" src=\"".$url."\"". $onclick .  " onmouseover=\"domTT_activate(this, event, 'content', '".htmlspecialchars("<strong>".nexus_trans('attachment.size')."</strong>: ".mksize($row['filesize'])."<br />".gettime($row['added']))."', 'styleClass', 'attach', 'x', findPosition(this)[0], 'y', findPosition(this)[1]-58);\" />";
+            }
 		}
 		else $return = "";
 	}
@@ -244,16 +248,19 @@ function formatImg($src, $enableImageResizer, $image_max_width, $image_max_heigh
         " onerror=\"handleImageError(this, '$src');\" />");
 }
 
-function formatGalleryImg($src) {
+function formatGalleryImg($src, $alt = 'Screenshot', $imgId = '') {
     $src = htmlspecialchars_decode($src, ENT_QUOTES | ENT_HTML5);
     $src = filter_src($src);
     if (empty($src)) {
         return "";
     }
     $escapedSrc = htmlspecialchars($src, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $escapedAlt = htmlspecialchars($alt, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $escapedId = htmlspecialchars($imgId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     return addTempCode(
         '<span class="torrent-screenshot-thumbnail" style="display: inline-block; margin: 4px; vertical-align: top;">'
-        . '<img src="' . $escapedSrc . '" alt="Screenshot"'
+        . '<img' . ($escapedId !== '' ? ' id="' . $escapedId . '"' : '')
+        . ' src="' . $escapedSrc . '" alt="' . $escapedAlt . '"'
         . ' style="display: block !important; width: 220px !important; height: 125px !important; max-width: 100% !important; object-fit: cover; cursor: zoom-in;"'
         . ' onclick="Preview(this);" />'
         . '</span>'
@@ -513,8 +520,8 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
     if ($enableattach_attachment == 'yes' && $imagenum != 1){
         $limit = 20;
 //		$s = preg_replace("/\[attach\]([0-9a-zA-z][0-9a-zA-z]*)\[\/attach\]/ies", "print_attachment('\\1', ".($enableimage ? 1 : 0).", ".($imageresizer ? 1 : 0).")", $s, $limit);
-        $s = preg_replace_callback("/\[attach\]([0-9a-zA-z][0-9a-zA-z]*)\[\/attach\]/is", function ($matches) use ($enableimage, $imageresizer) {
-            return print_attachment($matches[1], ".($enableimage ? 1 : 0).", ".($imageresizer ? 1 : 0).");
+        $s = preg_replace_callback("/\[attach\]([0-9a-zA-z][0-9a-zA-z]*)\[\/attach\]/is", function ($matches) use ($enableimage, $imageresizer, $image_gallery) {
+            return print_attachment($matches[1], $enableimage, $imageresizer, $image_gallery);
         }, $s, $limit);
     }
 
