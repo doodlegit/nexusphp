@@ -803,6 +803,8 @@ function textbbcode($form,$text,$content="",$hastitle=false, $col_num = 130, $wi
 	$btnEditId = "$form-$text-btn-edit";
     $btnPreviewId = "$form-$text-btn-preview";
     $attachmentRowId = "$form-$text-attachment-row";
+    $splitPreviewId = "$form-$text-split-preview";
+    $smiliesCellId = "$form-$text-smilies";
 ?>
 
 <script type="text/javascript">
@@ -817,6 +819,11 @@ var i_open = 0;
 var u_open = 0;
 var s_open = 0;
 var code_open = 0;
+var center_open = 0;
+var left_open = 0;
+var right_open = 0;
+var spoiler_open = 0;
+var hide_open = 0;
 var color_open = 0;
 var list_open = 0;
 var quote_open = 0;
@@ -1025,11 +1032,55 @@ function textBBCodePreview() {
     jQuery('#' + btnPreviewId).hide()
     jQuery('#' + btnEditId).show()
 }
+function toggleBBCodeSplitPreview() {
+    let editor = document.getElementById(textareaId);
+    let preview = document.getElementById("<?php echo $splitPreviewId ?>");
+    let smilies = document.getElementById("<?php echo $smiliesCellId ?>");
+    if (preview.style.display !== 'none') {
+        preview.style.display = 'none';
+        editor.style.flex = '1 1 100%';
+        smilies.style.display = '';
+        return;
+    }
+    let poststr = encodeURIComponent(document.getElementById(textareaId).value);
+    preview.innerHTML = ajax.posts('preview.php', 'body=' + poststr);
+    preview.style.display = 'block';
+    editor.style.flex = '1 1 50%';
+    smilies.style.display = 'none';
+}
 function textBBCodeEdit() {
     jQuery('#' + editTbodyId).show()
     jQuery('#' + previewTbodyId).hide()
     jQuery('#' + btnPreviewId).show()
     jQuery('#' + btnEditId).hide()
+}
+function clearBBCodeFormatting() {
+    let editor = document.getElementById(textareaId);
+    if (editor.selectionStart === editor.selectionEnd) {
+        alert('Select text to clear its formatting.');
+        return;
+    }
+    let selectedText = editor.value.slice(editor.selectionStart, editor.selectionEnd);
+    selectedText = selectedText.replace(/\[\/?(b|i|u|s|color|font|size|quote|code)(=[^\]]*)?\]/gi, '');
+    editor.setRangeText(selectedText, editor.selectionStart, editor.selectionEnd, 'end');
+    editor.focus();
+}
+function insertOrderedBBCodeList() {
+    let editor = document.getElementById(textareaId);
+    let items = editor.value.slice(editor.selectionStart, editor.selectionEnd);
+    if (!items.trim()) {
+        items = prompt('Enter list items, one per line:') || '';
+    }
+    items = items.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+    if (items.length) {
+        doInsert(items.map((item, index) => (index + 1) + '. ' + item).join('\n'), '', false);
+    }
+}
+function insertMediaBBCode(tag) {
+    let url = prompt('Enter ' + tag + ' URL:', 'https://');
+    if (url && url !== 'https://') {
+        doInsert('[' + tag + ']' + url + '[/' + tag + ']', '', false);
+    }
 }
 //]]>
 </script>
@@ -1045,16 +1096,65 @@ function textBBCodeEdit() {
 <div class="compact-bbcode-toolbar">
     <button type="button" name="b" value="B" title="Bold" aria-label="Bold" onclick="simpletag('b')"><b>B</b></button>
     <button type="button" name="i" value="I" title="Italic" aria-label="Italic" onclick="simpletag('i')"><i>I</i></button>
+    <button type="button" name="u" value="U" title="Underline" aria-label="Underline" onclick="simpletag('u')"><u>U</u></button>
     <button type="button" name="s" value="S" title="Strikethrough" aria-label="Strikethrough" onclick="simpletag('s')"><s>S</s></button>
     <button type="button" name="code" value="&lt;/&gt;" title="Code" aria-label="Code" onclick="simpletag('code')">&lt;/&gt;</button>
     <button type="button" name="quote" value="&ldquo;" title="Quote" aria-label="Quote" onclick="simpletag('quote')">&ldquo;</button>
     <button type="button" title="List item" aria-label="List item" onclick="tag_list('Enter list item','Please enter a list item.')">&bull;</button>
+    <button type="button" title="Ordered list" aria-label="Ordered list" onclick="insertOrderedBBCodeList()">1.</button>
+    <button type="button" name="center" value="C" title="Center align" aria-label="Center align" onclick="simpletag('center')">C</button>
+    <button type="button" name="left" value="L" title="Left align" aria-label="Left align" onclick="simpletag('left')">L</button>
+    <button type="button" name="right" value="R" title="Right align" aria-label="Right align" onclick="simpletag('right')">R</button>
+    <button type="button" name="spoiler" value="S" title="Spoiler" aria-label="Spoiler" onclick="simpletag('spoiler')">S?</button>
+    <button type="button" name="hide" value="H" title="Hidden text" aria-label="Hidden text" onclick="simpletag('hide')">H</button>
     <button type="button" title="Insert link" aria-label="Insert link" onclick="tag_url('Enter URL','Enter link title','Please enter a URL and title.')">&#128279;</button>
     <button type="button" title="Insert image" aria-label="Insert image" onclick="tag_image('Enter image URL','Please enter an image URL.')">&#128444;</button>
+    <button type="button" title="Insert YouTube video" aria-label="Insert YouTube video" onclick="insertMediaBBCode('youtube')">YT</button>
+    <button type="button" title="Insert video" aria-label="Insert video" onclick="insertMediaBBCode('video')">V</button>
+    <button type="button" title="Insert audio" aria-label="Insert audio" onclick="insertMediaBBCode('audio')">A</button>
     <?php if ($enableattach_attachment == 'yes') { ?>
     <button type="button" title="Upload attachment" aria-label="Upload attachment" onclick="jQuery('#<?php echo $attachmentRowId ?>').toggle()">&#8593;</button>
     <?php } ?>
     <button type="button" title="Horizontal line" aria-label="Horizontal line" onclick="doInsert('[hr]', '', false)">&mdash;</button>
+    <button type="button" name="tagcount" value="Close tags" title="Close last open tag" aria-label="Close last open tag" onclick="closeall()">&#10005;</button>
+    <select class="med codebuttons" name="color" title="Text color" aria-label="Text color" onchange="alterfont(this.options[this.selectedIndex].value, 'color')">
+        <option value="0">Color</option>
+        <option value="Black">Black</option><option value="Sienna">Sienna</option><option value="DarkOliveGreen">Dark Olive Green</option>
+        <option value="DarkGreen">Dark Green</option><option value="DarkSlateBlue">Dark Slate Blue</option><option value="Navy">Navy</option>
+        <option value="Indigo">Indigo</option><option value="DarkSlateGray">Dark Slate Gray</option><option value="DarkRed">Dark Red</option>
+        <option value="DarkOrange">Dark Orange</option><option value="Olive">Olive</option><option value="Green">Green</option>
+        <option value="Teal">Teal</option><option value="Blue">Blue</option><option value="SlateGray">Slate Gray</option>
+        <option value="DimGray">Dim Gray</option><option value="Red">Red</option><option value="SandyBrown">Sandy Brown</option>
+        <option value="YellowGreen">Yellow Green</option><option value="SeaGreen">Sea Green</option><option value="MediumTurquoise">Medium Turquoise</option>
+        <option value="RoyalBlue">Royal Blue</option><option value="Purple">Purple</option><option value="Gray">Gray</option>
+        <option value="Magenta">Magenta</option><option value="Orange">Orange</option><option value="Yellow">Yellow</option>
+        <option value="Lime">Lime</option><option value="Cyan">Cyan</option><option value="DeepSkyBlue">Deep Sky Blue</option>
+        <option value="DarkOrchid">Dark Orchid</option><option value="Silver">Silver</option><option value="Pink">Pink</option>
+        <option value="Wheat">Wheat</option><option value="LemonChiffon">Lemon Chiffon</option><option value="PaleGreen">Pale Green</option>
+        <option value="PaleTurquoise">Pale Turquoise</option><option value="LightBlue">Light Blue</option><option value="Plum">Plum</option>
+        <option value="White">White</option>
+    </select>
+    <select class="med codebuttons" name="font" title="Font" aria-label="Font" onchange="alterfont(this.options[this.selectedIndex].value, 'font')">
+        <option value="0">Font</option>
+        <option value="Arial">Arial</option><option value="Arial Black">Arial Black</option><option value="Arial Narrow">Arial Narrow</option>
+        <option value="Book Antiqua">Book Antiqua</option><option value="Century Gothic">Century Gothic</option><option value="Comic Sans MS">Comic Sans MS</option>
+        <option value="Courier New">Courier New</option><option value="Fixedsys">Fixedsys</option><option value="Garamond">Garamond</option>
+        <option value="Georgia">Georgia</option><option value="Impact">Impact</option><option value="Lucida Console">Lucida Console</option>
+        <option value="Lucida Sans Unicode">Lucida Sans Unicode</option><option value="Microsoft Sans Serif">Microsoft Sans Serif</option>
+        <option value="Palatino Linotype">Palatino Linotype</option><option value="System">System</option><option value="Tahoma">Tahoma</option>
+        <option value="Times New Roman">Times New Roman</option><option value="Trebuchet MS">Trebuchet MS</option><option value="Verdana">Verdana</option>
+    </select>
+    <select class="med codebuttons" name="size" title="Text size" aria-label="Text size" onchange="alterfont(this.options[this.selectedIndex].value, 'size')">
+        <option value="0">Size</option>
+        <?php for ($size = 1; $size <= 7; $size++) { ?>
+        <option value="<?php echo $size ?>"><?php echo $size ?></option>
+        <?php } ?>
+    </select>
+    <button type="button" title="Clear selected formatting" aria-label="Clear selected formatting" onclick="clearBBCodeFormatting()">&#9003;</button>
+    <button type="button" title="Toggle split preview" aria-label="Toggle split preview" onclick="toggleBBCodeSplitPreview()">&#9645;</button>
+    <?php if ($withPreview) { ?>
+    <button type="button" id="<?php echo $btnPreviewId ?>" title="<?php echo htmlspecialchars($lang_functions['submit_preview'], ENT_QUOTES, 'UTF-8') ?>" aria-label="<?php echo htmlspecialchars($lang_functions['submit_preview'], ENT_QUOTES, 'UTF-8') ?>" onclick="textBBCodePreview()">&#9673;</button>
+    <?php } ?>
 </div>
 <?php } else { ?>
 <table cellspacing="1" cellpadding="2" border="0">
@@ -1163,10 +1263,14 @@ if ($enableattach_attachment == 'yes'){
 <?php
 }
 print("<tr>");
-print("<td align=\"left\"><textarea class=\"bbcode\" cols=\"100\" style=\"width: 100%;\" name=\"".$text."\" id=\"".$text."\" rows=\"20\" onkeydown=\"ctrlenter(event,'compose','qr')\">".$content."</textarea>");
+print("<td align=\"left\">".($compactToolbar ? '<div style="display: flex; gap: 8px; width: 100%; align-items: flex-start">' : ""));
+print("<textarea class=\"bbcode\" cols=\"100\" style=\"width: 100%;".($compactToolbar ? " flex: 1 1 100%;" : "")."\" name=\"".$text."\" id=\"".$text."\" rows=\"20\" onkeydown=\"ctrlenter(event,'compose','qr')\">".$content."</textarea>");
+if ($compactToolbar) {
+    print("<div id=\"".$splitPreviewId."\" class=\"rowfollow\" style=\"display: none; flex: 1 1 50%; min-width: 0; vertical-align: top\"></div></div>");
+}
 ?>
 </td>
-<td align="center" width="">
+<td id="<?php echo $smiliesCellId ?>" align="center" width="">
 <table cellspacing="1" cellpadding="3">
 <tr>
 <?php
@@ -1188,7 +1292,9 @@ foreach ($quickSmilies as $smily) {
     <tbody id="<?php echo $previewTbodyId?>"></tbody>
     <tbody>
         <tr><td colspan="2" style="text-align: center;border: none">
+            <?php if (!$compactToolbar) { ?>
             <input id="<?php echo $btnPreviewId ?>" type="button" class="btn" value="<?php echo $lang_functions['submit_preview']?>" onclick="javascript:textBBCodePreview()">
+            <?php } ?>
             <input id="<?php echo $btnEditId ?>" type="button" class="btn" style="display: none" value="<?php echo $lang_functions['submit_edit']?>" onclick="javascript:textBBCodeEdit()">
         </td></tr>
     </tbody>
