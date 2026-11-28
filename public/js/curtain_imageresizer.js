@@ -47,12 +47,31 @@ function check_avatar(image, langfolder){
 
 function Preview(image) {
 	if (!is_ie || is_ie >= 7){
-	$('lightbox').innerHTML = "<a onclick=\"Return();\"><img src=\"" + image.src + "\" /></a>";
-	$('curtain').style.display = "block";
-	$('lightbox').style.display = "block";
+	var curtain = $('curtain');
+	var lightbox = $('lightbox');
+	if (!curtain) {
+		curtain = document.createElement('div');
+		curtain.id = 'curtain';
+		document.body.appendChild(curtain);
+	}
+	if (!lightbox) {
+		lightbox = document.createElement('div');
+		lightbox.id = 'lightbox';
+		document.body.appendChild(lightbox);
+	}
+	curtain.style.cssText = "display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: 1001;";
+	lightbox.style.cssText = "display: block; position: fixed; inset: 5%; z-index: 1002; overflow: auto; text-align: center; cursor: zoom-out;";
+	lightbox.innerHTML = "";
+	var fullImage = document.createElement('img');
+	fullImage.src = image.currentSrc || image.src;
+	fullImage.alt = image.alt || 'image';
+	fullImage.style.cssText = "max-width: none; max-height: none; width: auto; height: auto;";
+	lightbox.appendChild(fullImage);
+	curtain.onclick = Return;
+	lightbox.onclick = Return;
 	}
 	else{
-	window.open(image.src);
+	window.open(image.currentSrc || image.src);
 	}
 }
 
@@ -80,9 +99,15 @@ function findPosition( oElement ) {
 }
 
 function Return() {
-	$('lightbox').style.display = "none";
-	$('curtain').style.display = "none";
-	$('lightbox').innerHTML = "";
+	var lightbox = $('lightbox');
+	var curtain = $('curtain');
+	if (lightbox) {
+		lightbox.style.display = "none";
+		lightbox.innerHTML = "";
+	}
+	if (curtain) {
+		curtain.style.display = "none";
+	}
 }
 // 处理图片加载失败的函数
 function handleImageError(img, currentSrc) {
