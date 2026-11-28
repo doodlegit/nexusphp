@@ -794,7 +794,7 @@ function get_elapsed_time($ts,$shortunit = false)
 	return "&lt; 1".($shortunit ? $lang_functions['text_short_min'] : $lang_functions['text_min']);
 }
 
-function textbbcode($form,$text,$content="",$hastitle=false, $col_num = 130, $withPreview = false)
+function textbbcode($form,$text,$content="",$hastitle=false, $col_num = 130, $withPreview = false, $compactToolbar = false)
 {
 	global $lang_functions;
 	global $subject, $BASEURL, $CURUSER, $enableattach_attachment;
@@ -802,6 +802,7 @@ function textbbcode($form,$text,$content="",$hastitle=false, $col_num = 130, $wi
 	$previewTbodyId = "$form-$text-preview";
 	$btnEditId = "$form-$text-btn-edit";
     $btnPreviewId = "$form-$text-btn-preview";
+    $attachmentRowId = "$form-$text-attachment-row";
 ?>
 
 <script type="text/javascript">
@@ -814,6 +815,8 @@ function textbbcode($form,$text,$content="",$hastitle=false, $col_num = 130, $wi
 var b_open = 0;
 var i_open = 0;
 var u_open = 0;
+var s_open = 0;
+var code_open = 0;
 var color_open = 0;
 var list_open = 0;
 var quote_open = 0;
@@ -1033,6 +1036,27 @@ function textBBCodeEdit() {
 <table width="100%" cellspacing="0" cellpadding="5" border="0">
     <tbody id="<?php echo $editTbodyId?>">
 <tr><td align="left" colspan="2">
+<?php if ($compactToolbar) { ?>
+<style>
+.compact-bbcode-toolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid #d5d5d5; background: #f7f7f7; width: fit-content; }
+.compact-bbcode-toolbar button { width: 28px; height: 26px; padding: 2px; border: 1px solid #ccc; border-radius: 3px; background: #f7f7f7; color: #555; cursor: pointer; }
+.compact-bbcode-toolbar button:hover { background: #eee; }
+</style>
+<div class="compact-bbcode-toolbar">
+    <button type="button" name="b" value="B" title="Bold" aria-label="Bold" onclick="simpletag('b')"><b>B</b></button>
+    <button type="button" name="i" value="I" title="Italic" aria-label="Italic" onclick="simpletag('i')"><i>I</i></button>
+    <button type="button" name="s" value="S" title="Strikethrough" aria-label="Strikethrough" onclick="simpletag('s')"><s>S</s></button>
+    <button type="button" name="code" value="&lt;/&gt;" title="Code" aria-label="Code" onclick="simpletag('code')">&lt;/&gt;</button>
+    <button type="button" name="quote" value="&ldquo;" title="Quote" aria-label="Quote" onclick="simpletag('quote')">&ldquo;</button>
+    <button type="button" title="List item" aria-label="List item" onclick="tag_list('Enter list item','Please enter a list item.')">&bull;</button>
+    <button type="button" title="Insert link" aria-label="Insert link" onclick="tag_url('Enter URL','Enter link title','Please enter a URL and title.')">&#128279;</button>
+    <button type="button" title="Insert image" aria-label="Insert image" onclick="tag_image('Enter image URL','Please enter an image URL.')">&#128444;</button>
+    <?php if ($enableattach_attachment == 'yes') { ?>
+    <button type="button" title="Upload attachment" aria-label="Upload attachment" onclick="jQuery('#<?php echo $attachmentRowId ?>').toggle()">&#8593;</button>
+    <?php } ?>
+    <button type="button" title="Horizontal line" aria-label="Horizontal line" onclick="doInsert('[hr]', '', false)">&mdash;</button>
+</div>
+<?php } else { ?>
 <table cellspacing="1" cellpadding="2" border="0">
 <tr>
 <td class="embedded"><input style="font-weight: bold;font-size:11px; margin-right:3px" type="button" name="b" value="B" onclick="javascript: simpletag('b')" /></td>
@@ -1125,12 +1149,13 @@ print("<td class=\"embedded\"><input type=\"button\" style=\"font-size:11px;marg
 <option value="7">7</option>
 </select></td></tr>
 </table>
+<?php } ?>
 </td>
 </tr>
 <?php
 if ($enableattach_attachment == 'yes'){
 ?>
-<tr>
+<tr id="<?php echo $attachmentRowId ?>"<?php echo $compactToolbar ? ' style="display: none"' : '' ?>>
 <td colspan="2" valign="middle">
 <iframe src="<?php echo getSchemeAndHttpHost()?>/attachment.php" width="100%" height="24" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
 </td>

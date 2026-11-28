@@ -181,7 +181,7 @@ stdhead($lang_upload['head_upload']);
 				    . "Genres:\n\n"
 				    . "[b]Synopsis[/b]\n\n\n"
 				    . "[b]Screenshots[/b]\n";
-				textbbcode("upload","descr", $descriptionTemplate, false, 130, true);
+				textbbcode("upload","descr", $descriptionTemplate, false, 130, true, true);
 				print("</td></tr>\n");
 
                 if ($settingMain['enable_technical_info'] == 'yes') {
