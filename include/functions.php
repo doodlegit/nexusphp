@@ -409,6 +409,17 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
         }, $s);
     }
 
+    if ($image_gallery) {
+        $s = preg_replace('/(\[\/url\])\s*(?=\[url=[^\]\r\n]+\]\s*\[img\])/i', '$1', $s);
+        $s = preg_replace_callback(
+            '/\[url=[^\]\r\n]+\]\s*\[img\]([^\r\n]+?)\[\/img\]\s*\[\/url\]/i',
+            function ($matches) {
+                return formatGalleryImg($matches[1]);
+            },
+            $s
+        );
+    }
+
     // Linebreaks
     $s = nl2br($s);
 
